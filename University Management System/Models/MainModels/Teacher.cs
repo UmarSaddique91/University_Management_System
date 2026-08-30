@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System.Text.Json.Serialization;
 
 namespace University_Management_System.Models.MainModels
 {
@@ -16,9 +17,12 @@ namespace University_Management_System.Models.MainModels
 
         public string? Status { get; set; } = "Active";
 
-        public ICollection <Assignment>  AssignedCourses { get; set; } 
+        public ICollection <Assignment>?  AssignedCourses { get; set; }
 
-        public int DepartmentId { get; set; }
-        public Department Department { get; set; }
+        [JsonIgnore]
+        public int? DepartmentId { get; set; }
+
+        [JsonIgnore]
+        public Department? Department { get; set; }
     }
 }

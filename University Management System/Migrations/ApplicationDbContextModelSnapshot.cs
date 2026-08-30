@@ -187,7 +187,7 @@ namespace University_Management_System.Migrations
                     b.Property<string>("Contact")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("DepartmentId")
+                    b.Property<int?>("DepartmentId")
                         .HasColumnType("int");
 
                     b.Property<string>("DepartmentName")
@@ -269,9 +269,7 @@ namespace University_Management_System.Migrations
                 {
                     b.HasOne("University_Management_System.Models.MainModels.Department", "Department")
                         .WithMany("Teachers")
-                        .HasForeignKey("DepartmentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("DepartmentId");
 
                     b.Navigation("Department");
                 });
