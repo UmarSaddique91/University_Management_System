@@ -6,8 +6,8 @@
         public string? DepartmentName { get; set; }
 
 
-        public ICollection<Teacher> Teachers { get; set; }
-        public ICollection<Course> Courses { get; set; }
+        public ICollection<Teacher>? Teachers { get; set; }
+        public ICollection<Course>? Courses { get; set; }
 
     }
 }
