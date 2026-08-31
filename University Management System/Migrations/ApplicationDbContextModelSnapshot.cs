@@ -32,10 +32,11 @@ namespace University_Management_System.Migrations
                     b.Property<int>("AssignedTeacherId")
                         .HasColumnType("int");
 
-                    b.Property<string>("AssingmentCode")
+                    b.Property<string>("AssignmentCode")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("Capacity")
+                    b.Property<int?>("Capacity")
                         .HasColumnType("int");
 
                     b.Property<int>("CourseId")
@@ -48,9 +49,14 @@ namespace University_Management_System.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("Department")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Semester")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("TeacherId")
