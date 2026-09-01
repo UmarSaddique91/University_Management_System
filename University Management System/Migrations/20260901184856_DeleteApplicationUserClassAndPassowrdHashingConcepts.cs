@@ -5,7 +5,7 @@
 namespace University_Management_System.Migrations
 {
     /// <inheritdoc />
-    public partial class FixAdminSeed : Migration
+    public partial class DeleteApplicationUserClassAndPassowrdHashingConcepts : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
