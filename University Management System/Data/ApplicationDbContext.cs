@@ -4,7 +4,7 @@ using University_Management_System.Models.MainModels;
 using Microsoft.AspNetCore.Identity;
 namespace University_Management_System.Data
 {
-    public class ApplicationDbContext : DbContext
+    public class ApplicationDbContext : IdentityDbContext
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options): base(options)
         {
