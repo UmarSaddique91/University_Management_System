@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using University_Management_System.Constants;
 using University_Management_System.Data;
 using University_Management_System.Models.MainModels;
 
@@ -38,6 +39,8 @@ namespace University_Management_System.Controllers
 
 
         //GetApi
+
+        [Authorize(Roles = SystemRoles.superAdmin)]
 
         [HttpGet]
 

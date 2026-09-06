@@ -21,7 +21,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 //For LoginSignup
 
 builder.Services.AddIdentity<IdentityUser, IdentityRole>()
-    .AddEntityFrameworkStores<ApplicationDbContext>();
+    .AddEntityFrameworkStores<ApplicationDbContext>().AddDefaultTokenProviders();
 
 //JWT Authentication
 builder.Services.AddAuthentication(options =>
@@ -50,10 +50,18 @@ var app = builder.Build();
 
 using (var scope= app.Services.CreateScope())
 {
+
+    //scope for roles
     var roleManager = scope.ServiceProvider
         .GetRequiredService<RoleManager<IdentityRole>>();
 
+    //scope for user
+
+    var userManager = scope.ServiceProvider
+        .GetRequiredService<UserManager<IdentityUser>>();
+
     await RoleSeeder.SeedRolesAsync(roleManager);
+    await SuperAdminSeeder.SuperAdminSeederAsync(userManager,app.Configuration);
 }
 
 // Configure the HTTP request pipeline.

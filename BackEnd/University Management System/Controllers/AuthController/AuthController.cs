@@ -6,6 +6,7 @@ using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
+
 namespace University_Management_System.Controllers
 {
     [Route("api/[controller]")]
@@ -31,12 +32,22 @@ namespace University_Management_System.Controllers
 
             if (user != null && await _userManager.CheckPasswordAsync(user, model.Password))
             {
+
+                //Get Assigned role of User
+
+                var userRoles = await _userManager.GetRolesAsync(user);
                 var authClaims = new List<Claim>
                 {
                     new Claim(ClaimTypes.Name,user.UserName),
                     new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
                 };
 
+
+                foreach(var role in userRoles){
+                    authClaims.Add(
+                        new Claim(ClaimTypes.Role, role)
+                        );
+                }
                 var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Key"]));
 
                 var token = new JwtSecurityToken(
