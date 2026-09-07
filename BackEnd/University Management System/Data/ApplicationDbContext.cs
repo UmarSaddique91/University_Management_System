@@ -20,6 +20,8 @@ namespace University_Management_System.Data
 
         public DbSet<Setting> Settings { get; set; }
 
+        public DbSet<Student> Students { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

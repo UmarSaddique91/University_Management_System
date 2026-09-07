@@ -381,6 +381,46 @@ namespace University_Management_System.Migrations
                     b.ToTable("Settings");
                 });
 
+            modelBuilder.Entity("University_Management_System.Models.MainModels.Student", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Program")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RollNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Semester")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("StudentName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.ToTable("Students");
+                });
+
             modelBuilder.Entity("University_Management_System.Models.MainModels.Teacher", b =>
                 {
                     b.Property<int>("Id")
@@ -514,6 +554,15 @@ namespace University_Management_System.Migrations
                 {
                     b.HasOne("University_Management_System.Models.MainModels.Department", "Department")
                         .WithMany("Courses")
+                        .HasForeignKey("DepartmentId");
+
+                    b.Navigation("Department");
+                });
+
+            modelBuilder.Entity("University_Management_System.Models.MainModels.Student", b =>
+                {
+                    b.HasOne("University_Management_System.Models.MainModels.Department", "Department")
+                        .WithMany()
                         .HasForeignKey("DepartmentId");
 
                     b.Navigation("Department");

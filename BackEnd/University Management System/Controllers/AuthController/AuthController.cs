@@ -5,6 +5,7 @@ using University_Management_System.DTOs;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using University_Management_System.Constants;
 
 
 namespace University_Management_System.Controllers
@@ -80,10 +81,22 @@ namespace University_Management_System.Controllers
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
             var user = new IdentityUser { UserName = model.Email, Email = model.Email };
+
+            var existingUser = await _userManager.FindByEmailAsync(model.Email);
+            if(existingUser != null)
+            {
+                return BadRequest(new { message = "User Already Registered" });
+            }
             var result = await _userManager.CreateAsync(user, model.Password);
 
             if (result.Succeeded)
             {
+                var roleResult=await _userManager.AddToRoleAsync(user, SystemRoles.Student);
+
+                if (!roleResult.Succeeded)
+                {
+                    return BadRequest(new { message = (roleResult.Errors) });
+                }
                 return Ok(new { message = "User registered successfully!" });
             }
 
