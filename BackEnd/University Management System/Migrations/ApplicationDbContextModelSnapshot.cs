@@ -220,6 +220,35 @@ namespace University_Management_System.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("University_Management_System.Models.MainModels.AcademicProgram", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DurationInSemesters")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ProgramCode")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ProgramName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.ToTable("AcademicPrograms");
+                });
+
             modelBuilder.Entity("University_Management_System.Models.MainModels.Assignment", b =>
                 {
                     b.Property<int>("Id")
@@ -521,6 +550,15 @@ namespace University_Management_System.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("University_Management_System.Models.MainModels.AcademicProgram", b =>
+                {
+                    b.HasOne("University_Management_System.Models.MainModels.Department", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId");
+
+                    b.Navigation("Department");
                 });
 
             modelBuilder.Entity("University_Management_System.Models.MainModels.Assignment", b =>
