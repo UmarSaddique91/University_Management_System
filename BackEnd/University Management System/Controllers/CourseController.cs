@@ -1,5 +1,7 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using University_Management_System.Constants;
 using University_Management_System.Data;
 using University_Management_System.Models.MainModels;
 
@@ -7,6 +9,7 @@ namespace University_Management_System.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize (Roles =SystemRoles.superAdmin)]
     public class CourseController : ControllerBase
     {
         private readonly ApplicationDbContext _context;

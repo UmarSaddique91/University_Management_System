@@ -365,6 +365,34 @@ namespace University_Management_System.Migrations
                     b.ToTable("Courses");
                 });
 
+            modelBuilder.Entity("University_Management_System.Models.MainModels.CourseOffering", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CourseId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SemesterId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TeacherId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourseId");
+
+                    b.HasIndex("SemesterId");
+
+                    b.HasIndex("TeacherId");
+
+                    b.ToTable("CourseOfferings");
+                });
+
             modelBuilder.Entity("University_Management_System.Models.MainModels.Department", b =>
                 {
                     b.Property<int>("Id")
@@ -647,6 +675,33 @@ namespace University_Management_System.Migrations
                         .HasForeignKey("DepartmentId");
 
                     b.Navigation("Department");
+                });
+
+            modelBuilder.Entity("University_Management_System.Models.MainModels.CourseOffering", b =>
+                {
+                    b.HasOne("University_Management_System.Models.MainModels.Course", "Course")
+                        .WithMany()
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("University_Management_System.Models.MainModels.Semester", "Semester")
+                        .WithMany()
+                        .HasForeignKey("SemesterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("University_Management_System.Models.MainModels.Teacher", "Teacher")
+                        .WithMany()
+                        .HasForeignKey("TeacherId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Course");
+
+                    b.Navigation("Semester");
+
+                    b.Navigation("Teacher");
                 });
 
             modelBuilder.Entity("University_Management_System.Models.MainModels.Semester", b =>
