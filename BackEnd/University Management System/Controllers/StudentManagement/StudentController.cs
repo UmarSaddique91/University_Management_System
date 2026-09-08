@@ -99,7 +99,7 @@ namespace University_Management_System.Controllers.StudentManagement
         [HttpGet]
         public async Task <IActionResult> GetStudents()
         {
-            var students = _context.Students
+            var students =await  _context.Students
                 .Select(student => new
                 {
                     student.Id,
