@@ -249,6 +249,32 @@ namespace University_Management_System.Migrations
                     b.ToTable("AcademicPrograms");
                 });
 
+            modelBuilder.Entity("University_Management_System.Models.MainModels.AcademicSession", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("SessionName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AcademicSessions");
+                });
+
             modelBuilder.Entity("University_Management_System.Models.MainModels.Assignment", b =>
                 {
                     b.Property<int>("Id")
