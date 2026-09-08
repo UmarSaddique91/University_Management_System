@@ -26,6 +26,8 @@ namespace University_Management_System.Data
 
         public DbSet<AcademicSession> AcademicSessions { get; set; }
 
+        public DbSet<Semester> Semesters { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
