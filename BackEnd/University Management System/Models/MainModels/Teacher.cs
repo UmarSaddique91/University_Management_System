@@ -17,7 +17,7 @@ namespace University_Management_System.Models.MainModels
 
         public string? Status { get; set; } = "Active";
 
-        public ICollection <Assignment>?  AssignedCourses { get; set; }
+        
 
         [JsonIgnore]
         public int? DepartmentId { get; set; }

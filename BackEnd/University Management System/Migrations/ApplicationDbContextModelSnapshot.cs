@@ -275,60 +275,6 @@ namespace University_Management_System.Migrations
                     b.ToTable("AcademicSessions");
                 });
 
-            modelBuilder.Entity("University_Management_System.Models.MainModels.Assignment", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("AssignedTeacherId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("AssignmentCode")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("Capacity")
-                        .HasColumnType("int");
-
-                    b.Property<int>("CourseId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("CourseId1")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Credits")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Department")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Semester")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Status")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("TeacherId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AssignedTeacherId");
-
-                    b.HasIndex("CourseId");
-
-                    b.HasIndex("CourseId1");
-
-                    b.HasIndex("TeacherId");
-
-                    b.ToTable("Assignment");
-                });
-
             modelBuilder.Entity("University_Management_System.Models.MainModels.Attendance", b =>
                 {
                     b.Property<int>("Id")
@@ -684,21 +630,6 @@ namespace University_Management_System.Migrations
                     b.ToTable("Teachers");
                 });
 
-            modelBuilder.Entity("University_Management_System.Models.MainModels.TeacherCourse", b =>
-                {
-                    b.Property<int>("TeacherId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("CourseId")
-                        .HasColumnType("int");
-
-                    b.HasKey("TeacherId", "CourseId");
-
-                    b.HasIndex("CourseId");
-
-                    b.ToTable("TeacherCourse");
-                });
-
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -757,33 +688,6 @@ namespace University_Management_System.Migrations
                         .HasForeignKey("DepartmentId");
 
                     b.Navigation("Department");
-                });
-
-            modelBuilder.Entity("University_Management_System.Models.MainModels.Assignment", b =>
-                {
-                    b.HasOne("University_Management_System.Models.MainModels.Teacher", "AssignedTeacher")
-                        .WithMany()
-                        .HasForeignKey("AssignedTeacherId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("University_Management_System.Models.MainModels.Course", "Course")
-                        .WithMany()
-                        .HasForeignKey("CourseId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("University_Management_System.Models.MainModels.Course", null)
-                        .WithMany("AssignedTeachers")
-                        .HasForeignKey("CourseId1");
-
-                    b.HasOne("University_Management_System.Models.MainModels.Teacher", null)
-                        .WithMany("AssignedCourses")
-                        .HasForeignKey("TeacherId");
-
-                    b.Navigation("AssignedTeacher");
-
-                    b.Navigation("Course");
                 });
 
             modelBuilder.Entity("University_Management_System.Models.MainModels.Attendance", b =>
@@ -927,40 +831,11 @@ namespace University_Management_System.Migrations
                     b.Navigation("Department");
                 });
 
-            modelBuilder.Entity("University_Management_System.Models.MainModels.TeacherCourse", b =>
-                {
-                    b.HasOne("University_Management_System.Models.MainModels.Course", "Course")
-                        .WithMany()
-                        .HasForeignKey("CourseId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("University_Management_System.Models.MainModels.Teacher", "Teacher")
-                        .WithMany()
-                        .HasForeignKey("TeacherId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.Navigation("Course");
-
-                    b.Navigation("Teacher");
-                });
-
-            modelBuilder.Entity("University_Management_System.Models.MainModels.Course", b =>
-                {
-                    b.Navigation("AssignedTeachers");
-                });
-
             modelBuilder.Entity("University_Management_System.Models.MainModels.Department", b =>
                 {
                     b.Navigation("Courses");
 
                     b.Navigation("Teachers");
-                });
-
-            modelBuilder.Entity("University_Management_System.Models.MainModels.Teacher", b =>
-                {
-                    b.Navigation("AssignedCourses");
                 });
 #pragma warning restore 612, 618
         }

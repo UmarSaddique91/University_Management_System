@@ -10,7 +10,7 @@
         public string? Level { get; set; }
         public string? Status { get; set; }
 
-        public ICollection <Assignment>? AssignedTeachers { get; set; }
+        
 
 
         public int? DepartmentId { get; set; }
