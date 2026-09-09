@@ -35,6 +35,8 @@ namespace University_Management_System.Data
 
         public DbSet <Exam> Exams { get; set; }
 
+        public DbSet<Grade> Grades { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
