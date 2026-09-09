@@ -469,6 +469,34 @@ namespace University_Management_System.Migrations
                     b.ToTable("Enrollments");
                 });
 
+            modelBuilder.Entity("University_Management_System.Models.MainModels.Exam", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CourseOfferingId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ExamDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ExamType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("TotalMarks")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourseOfferingId");
+
+                    b.ToTable("Exams");
+                });
+
             modelBuilder.Entity("University_Management_System.Models.MainModels.Semester", b =>
                 {
                     b.Property<int>("Id")
@@ -800,6 +828,17 @@ namespace University_Management_System.Migrations
                     b.Navigation("CourseOffering");
 
                     b.Navigation("Student");
+                });
+
+            modelBuilder.Entity("University_Management_System.Models.MainModels.Exam", b =>
+                {
+                    b.HasOne("University_Management_System.Models.MainModels.CourseOffering", "CourseOffering")
+                        .WithMany()
+                        .HasForeignKey("CourseOfferingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CourseOffering");
                 });
 
             modelBuilder.Entity("University_Management_System.Models.MainModels.Semester", b =>

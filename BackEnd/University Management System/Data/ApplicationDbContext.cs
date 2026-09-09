@@ -33,6 +33,8 @@ namespace University_Management_System.Data
 
         public DbSet<Attendance> Attendance { get; set; }
 
+        public DbSet <Exam> Exams { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
