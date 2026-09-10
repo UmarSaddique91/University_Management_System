@@ -65,7 +65,7 @@ const Layout = ({ children }) => {
         }
     return (
 
-        <div className="h-screen bg-slate-200 flex ">
+        <div className="h-screen bg-slate-200 flex overflow-hidden">
 
             {/* Left Side Bar  */}
             <aside>
@@ -89,43 +89,43 @@ const Layout = ({ children }) => {
                         </a>
 
                         <a href="/teachers"
-                            className={`flex items-center text-white gap-2 py-2 px-5 
+                            className={`flex items-center text-white gap-2 py-2 px-2 
                 rounded rounded-md w-full transition-colors 
                 ${location.pathname === '/teachers' ? 'bg-blue-500' : 'bg-transparent hover:bg-blue-600'}  `}>
 
-                            <Users className="text-white w-5 h-5" />
-                            <span className="text-[1.1rem]">Teachers</span>
+                            <Users className="text-white" size={14} />
+                            <span className="text-[14px]">Teachers</span>
                         </a>
 
 
                         <a href="/courses"
-                            className={`flex items-center text-white gap-2 py-2 px-5 
+                            className={`flex items-center text-white gap-2 py-2 px-2 
                 rounded rounded-md w-full transition-colors 
                 ${location.pathname === '/courses' ? 'bg-blue-500' : 'bg-transparent hover:bg-blue-600'}  `}>
 
-                            <Folder className="text-white w-5 h-5" />
-                            <span className="text-[1.1rem]">Courses</span>
+                            <Folder className="text-white" size={14} />
+                            <span className="text-[14px]">Courses</span>
                         </a>
 
 
                         <a href="/assignments"
-                            className={`flex items-center text-white gap-2 py-2 px-5 
+                            className={`flex items-center text-white gap-2 py-2 px-2 
                 rounded rounded-md w-full transition-colors 
                 ${location.pathname === '/assignments' ? 'bg-blue-500' : 'bg-transparent hover:bg-blue-600'}  `}>
 
-                            <FileText className="text-white w-5 h-5" />
-                            <span className="text-[1.1rem]">Assignments</span>
+                            <FileText className="text-white" size={14} />
+                            <span className="text-[14px]">Assignments</span>
                         </a>
 
 
                         <a href="/settings"
 
-                            className={`flex items-center text-white gap-2 py-2 px-5 
+                            className={`flex items-center text-white gap-2 py-2 px-2 
                 rounded rounded-md w-full transition-colors 
                 ${location.pathname === '/settings' ? 'bg-blue-500' : 'bg-transparent hover:bg-blue-600'}  `}>
 
-                            <Settings className="text-white w-5 h-5" />
-                            <span className="text-[1.1rem]">Settings</span>
+                            <Settings className="text-white" size={14} />
+                            <span className="text-[14px]">Settings</span>
                         </a>
                     </nav>
                 </div>
@@ -134,131 +134,127 @@ const Layout = ({ children }) => {
 
 
 
-            {/* Header */}
-
-            {
-                <div className="flex  h-20 bg-white w-full  items-center justify-between px-10 py-4">
-                    <div className="relative ">
-                        <Search className="absolute text-gray-500 left-3 top-3.5 w-5 h-5" />
-                        <input type="text" placeholder="Search teachers,course..."
-                            className="bg-slate-200 rounded rounded-md py-3 px-10 w-90 focus:outline-none" />
+            {/* Main Area: Header + Content */}
+            <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+                {/* Header */}
+                <header className="flex h-14 bg-white w-full items-center justify-between px-6 shadow-sm flex-shrink-0">
+                    <div className="relative flex items-center">
+                        <Search className="absolute text-gray-400 left-3 w-4 h-4 pointer-events-none" />
+                        <input type="text" placeholder="Search teachers, course..."
+                            className="bg-slate-100 rounded-md py-1.5 pl-9 pr-4 w-72 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
                     </div>
 
                     {/* bell and admin icon */}
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3">
 
                         {/* Bell Icon for Notifications */}
-                        <div
-                            onClick={() => setShowNotification(!showNotification)}
-                            ref={notificationRef}
-                            className="relative rounded rounded-md bg-slate-200 p-2 cursor-pointer hover:bg-slate-300">
-                            <Bell className="text-gray-500 w-7 h-7  " />
-                            {notifications.length > 0 && <span className="absolute top-2 right-2 w-3 h-3 rounded-full bg-red-500"></span>}
-                        </div>
-
-
-                        {/* Notification DropDown Box */}
-
-                        {showNotification && (
-                            <div className="absolute top-13 right-3 mt-3 bg-white border border-gray-300 overflow-hidden rounded rounded-md w-80 p-3">
-                                <h2 className='font-bold text-[1.3rem] bg-gray-300 border-b border-black p-4 -mx-4 -mt-4 '>Notifications</h2>
-
-
-                                <div>
-                                    {notifications.length > 0 ? (
-                                        notifications.map((notification) => (
-                                            <div key={notification.id} className="p-5 border-b border-gray-300 -mx-4">
-                                                <div className="font-semibold">{notification.message}</div>
-                                                <div className='text-slate-500'>{notification.timeStamp}</div>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <div className="p-3 text-gray-500">No notifications</div>
-                                    )}
-                                </div>
-
-                                <div className=' bg-gray-300 border-t border-black p-4 -mx-4 -mb-4 text-center '>
-                                    <a href="#"
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            setNotificaitons([])
-                                        }}
-                                        className='text-blue-500 underline pb-1 text-[1.2rem]'>Clear All</a>
-                                </div>
-
+                        <div className="relative">
+                            <div
+                                onClick={() => setShowNotification(!showNotification)}
+                                ref={notificationRef}
+                                className="relative rounded-md bg-slate-100 p-1.5 cursor-pointer hover:bg-slate-200 flex items-center justify-center">
+                                <Bell className="text-gray-600 w-5 h-5" />
+                                {notifications.length > 0 && (
+                                    <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500"></span>
+                                )}
                             </div>
 
 
-                        )}
+                            {/* Notification DropDown Box */}
+
+                            {showNotification && (
+                                <div className="absolute top-10 right-0 mt-1 bg-white border border-gray-300 overflow-hidden rounded-md w-52 p-2 shadow-lg z-50">
+                                    <h2 className='font-bold text-sm bg-gray-300 border-b border-black px-3 py-2 -mx-2 -mt-2'>Notifications</h2>
+
+
+                                    <div>
+                                        {notifications.length > 0 ? (
+                                            notifications.map((notification) => (
+                                                <div key={notification.id} className="px-3 py-2 border-b border-gray-300 -mx-2">
+                                                    <div className="font-semibold text-xs">{notification.message}</div>
+                                                    <div className='text-slate-500 text-xs'>{notification.timeStamp}</div>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="p-2 text-gray-500 text-xs">No notifications</div>
+                                        )}
+                                    </div>
+
+                                    <div className='bg-gray-300 border-t border-black px-3 py-2 -mx-2 -mb-2 text-center'>
+                                        <a href="#"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                setNotificaitons([])
+                                            }}
+                                            className='text-blue-500 underline text-xs'>Clear All</a>
+                                    </div>
+
+                                </div>
+
+
+                            )}
+                        </div>
 
 
                         {/* Admin Icon and Name */}
                         <div 
-                        onClick={()=>setShowProfile(!showProfile)}
-                        ref={profileRef}
-                        className=" relative flex items-center gap-2 ml-4 cursor-pointer">
-                            <div className="w-10 h-10 rounded-full bg-slate-200 w-6 h-6 overflow-hidden">
-                                <img src="https://ui-avatars.com/api/?name=Admin+User&background=0D8ABC&color=fff" alt="admin image" />
+                            onClick={() => setShowProfile(!showProfile)}
+                            ref={profileRef}
+                            className="relative flex items-center gap-2 cursor-pointer">
+                            <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-200 flex-shrink-0">
+                                <img className="w-full h-full object-cover" src="https://ui-avatars.com/api/?name=Admin+User&background=0D8ABC&color=fff" alt="admin image" />
                             </div>
 
-                            <span className="text-black text-[1.1rem] font-semibold">Admin</span>
+                            <span className="text-black text-sm font-semibold">Admin</span>
 
 
                             {/* Logout Drop Down Box  */}
 
-                            {showProfile&&(
+                            {showProfile && (
 
-                                       <div  className="absolute top-9 right-0 mt-2 bg-white border border-gray-300
-                     rounded rounded-md w-60 p-3 overflow-hidden shadow-md ">
-                                <div className="flex items-center gap-3 bg-gray-300 p-4 -mx-4 -mt-4 border-b border-black">
+                                <div className="absolute top-10 right-0 mt-1 bg-white border border-gray-300 rounded-md w-40 p-2 overflow-hidden shadow-lg z-50">
+                                    <div className="flex items-center gap-2 bg-gray-300 px-3 py-2 -mx-2 -mt-2 border-b border-black">
 
-                                    <div className="w-10 h-10 rounded-full overflow-hidden ">
-                                        <img className="w-full h-full object-cover" src="https://ui-avatars.com/api/?name=Admin+User&background=0D8ABC&color=fff" alt="admin image" />
+                                        <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
+                                            <img className="w-full h-full object-cover" src="https://ui-avatars.com/api/?name=Admin+User&background=0D8ABC&color=fff" alt="admin image" />
+                                        </div>
+
+
+                                        <div className="flex flex-col">
+                                            <span className="font-semibold text-sm">Admin User</span>
+                                            <span className="text-gray-600 text-xs font-semibold -mt-0.5">Administrator</span>
+                                        </div>
+
+                                        
                                     </div>
 
-
-                                    <div className="flex flex-col">
-                                        <span className="font-semibold text-[1.1rem]">Admin User</span>
-                                        <span className="text-gray-600 text-[0.9rem] font-semibold -mt-2">Administrator</span>
-                                    </div>
-
-                                    
-                                </div>
-
-                                {/* Logout Button  */}
+                                    {/* Logout Button  */}
 
                                     <div>
-                                        <button onClick={handleLogout}   className='bg-gray-300 w-full p-3 cursor-pointer rounded rounded-md my-3
-                                        flex items-center gap-3
-                                        '>
-                                            <LogOut className="w-6 h-6 text-gray-800"/>
-                                            <p className='text-blue-500 font-semibold text-[1rem]'>LogOut</p>
+                                        <button onClick={handleLogout} className='bg-gray-300 w-full px-3 py-2 cursor-pointer rounded-md my-2 flex items-center gap-2'>
+                                            <LogOut className="w-4 h-4 text-gray-800"/>
+                                            <p className='text-blue-500 font-semibold text-xs'>LogOut</p>
                                         </button>
                                     </div>
 
                                     {/* Help&Support  */}
 
-                                    <div className=' bg-gray-300 border-t border-black p-4 -mx-4 -mb-4 text-center '>
-                                    <a href="#"
-                                        
-                                        className='text-blue-500 underline pb-1 text-[1rem]'>Help&Support</a>
+                                    <div className='bg-gray-300 border-t border-black px-3 py-2 -mx-2 -mb-2 text-center'>
+                                        <a href="#" className='text-blue-500 underline text-xs'>Help&Support</a>
+                                    </div>
                                 </div>
-                            </div>
                             )}
-                     
 
                         </div>
 
-
-
-
                     </div>
+                </header>
 
-
-
-
-                </div>
-            }
+                {/* Page Body Content */}
+                <main className="flex-1 overflow-y-auto p-6">
+                    {children}
+                </main>
+            </div>
         </div>
 
     )
