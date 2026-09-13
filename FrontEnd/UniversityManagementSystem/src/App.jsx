@@ -1,6 +1,6 @@
 import React from 'react'
 import Login from './pages/Login'
-import DashBoard from './pages/DashBoard'
+import DashBoard from './pages/Dashboards/AdminDashBoard'
 
 import { Routes, Route } from 'react-router-dom'
 

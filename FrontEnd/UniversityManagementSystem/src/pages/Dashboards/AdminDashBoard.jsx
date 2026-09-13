@@ -1,10 +1,15 @@
-import React from 'react'
-import Layout from '../layout/Layout'
-import StatCard from '../components/StatCard';
-import EnrollmentTrend from '../components/EnrollmentTrend';
+import React, { useEffectEvent } from 'react'
+import Layout from '../../layout/Layout'
+import StatCard from '../../components/StatCard';
+import EnrollmentTrend from '../../components/EnrollmentTrend';
 import { UserRound,Landmark,LibraryBig,NotebookTabs,UsersRound} from 'lucide-react'
+import {useState, useEffect} from 'react';
+import axios from 'axios'
 
 const DashBoard = () => {
+
+
+  // object for date on website
 const currentDate= new Date().toLocaleDateString("en-GB",{
 
   weekday:"long",
@@ -12,6 +17,49 @@ const currentDate= new Date().toLocaleDateString("en-GB",{
   month:"long",
   year:"numeric"
 });
+
+//Use  state for cards data upgradation
+
+const [dashboardData,SetDashboardData]= useState({
+  totalStudents:0,
+  totalTeachers:0,
+  totalCourses:0,
+  totalDepartments:0,
+  activeEnrollments:0,
+  studentThisMonth:0,
+  studentGrowthPercentage:0,
+  teacherThisMonth:0,
+  teacherGrowthPercentage:0,
+  enrollmentThisMonth:0,
+  enrollmentGrowthPercentage:0
+  
+})
+
+// UseEffect for cards data upgradition
+
+useEffect(()=>{
+
+  const fetchDashboardData=async()=>{
+    try {
+
+      const response= await axios.get(
+        "https://localhost:7272/api/DashboardSummary/summary"
+        
+      )
+
+      
+
+      SetDashboardData(response.data)
+      
+    } catch (error) {
+      console.log("Data noe fetched Successfully",error)
+      
+    }
+  }
+
+  fetchDashboardData();
+
+},[])
 
 
   return (
@@ -41,9 +89,9 @@ const currentDate= new Date().toLocaleDateString("en-GB",{
 
         Icon= {UserRound}
         Title="Total Studetns"
-        Value="1,248"
-        Change="↑ 12%"
-        SubText="+134 this month"
+        Value={dashboardData.totalStudents}
+        Change={`↑ ${dashboardData.studentGrowthPercentage}%`}
+        SubText={`+${dashboardData.studentThisMonth} this month`}
         iconBg=" bg-blue-500/30"
         cardBg="bg-blue-500/5"
         iconcolor="text-blue-700"
@@ -53,9 +101,9 @@ const currentDate= new Date().toLocaleDateString("en-GB",{
 
         Icon= {UsersRound}
         Title="Total Teachers"
-        Value="1,248"
-        Change="↑ 12%"
-        SubText="+134 this month"
+        Value={dashboardData.totalTeachers}
+        Change={`↑ ${dashboardData.teacherGrowthPercentage}%`}
+        SubText={`+${dashboardData.teacherThisMonth} this month`}
         iconBg=" bg-green-700/30"
         cardBg="bg-green-700/5"
         iconcolor="text-green-700"
@@ -65,9 +113,8 @@ const currentDate= new Date().toLocaleDateString("en-GB",{
 
         Icon= {NotebookTabs}
         Title="Total Courses"
-        Value="1,248"
-        Change="↑ 12%"
-        SubText="+134 this month"
+        Value={dashboardData.totalCourses}
+        
         iconBg=" bg-purple-700/30"
         cardBg="bg-purple-700/5"
         iconcolor="text-purple-700"
@@ -77,9 +124,8 @@ const currentDate= new Date().toLocaleDateString("en-GB",{
 
         Icon= {Landmark}
         Title="Total Departments"
-        Value="1,248"
-        Change="↑ 12%"
-        SubText="+134 this month"
+        Value={dashboardData.totalDepartments}
+        
         iconBg=" bg-yellow-700/30"
         cardBg="bg-yellow-700/5"
         iconcolor="text-yellow-700"
@@ -89,10 +135,10 @@ const currentDate= new Date().toLocaleDateString("en-GB",{
         <StatCard
 
         Icon= {LibraryBig}
-        Title="Total Enrollments"
-        Value="1,248"
-        Change="↑ 12%"
-        SubText="+134 this month"
+        Title="Active Enrollments"
+        Value={dashboardData.activeEnrollments}
+        Change={`↑ ${dashboardData.enrollmentGrowthPercentage}%`}
+        SubText={`+${dashboardData.enrollmentThisMonth} this month`}
         iconBg=" bg-red-700/30"
         cardBg="bg-red-700/5"
         iconcolor="text-red-700"

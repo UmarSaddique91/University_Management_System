@@ -71,7 +71,7 @@ const Layout = ({ children }) => {
             <aside>
 
 
-                <div className="w-64 bg-slate-900 h-full flex flex-col  p-5">
+                <div className="w-58 bg-slate-900 h-full flex flex-col  p-5">
 
                     <img src={Logo} alt="University Logo" className='w-50 h-20' />
 
