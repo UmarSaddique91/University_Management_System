@@ -38,7 +38,7 @@ namespace University_Management_System.Controllers.StudentManagement
                 StudentName = model.StudentName,
                 RollNumber = model.RollNumber,
                 DepartmentId = model.DepartmentId,
-                Program = model.Program,
+                AcademicProgramId = model.AcademicProgramId,
                 Semester = model.Semester,
                 Status = model.Status
             };
@@ -110,7 +110,7 @@ namespace University_Management_System.Controllers.StudentManagement
                     DepartmentName = student.Department != null
             ? student.Department.DepartmentName
             : null,
-                    student.Program,
+                    student.AcademicProgramId,
                     student.Semester,
                     student.Status
                 })
@@ -152,7 +152,7 @@ namespace University_Management_System.Controllers.StudentManagement
             student.StudentName = model.StudentName;
             student.RollNumber = model.RollNumber;
             student.DepartmentId = model.DepartmentId;
-            student.Program = model.Program;
+            student.AcademicProgramId = model.AcademicProgramId;
             student.Semester = model.Semester;
             student.Status = model.Status;
 

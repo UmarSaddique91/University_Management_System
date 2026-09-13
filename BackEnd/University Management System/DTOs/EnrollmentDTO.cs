@@ -6,7 +6,7 @@
 
         public int CourseOfferingId { get; set; }
 
-        public DateTime EnrollmentDate { get; set; }
+        public DateTime CreatedAt { get; set; }
 
         public string Status { get; set; }
     }

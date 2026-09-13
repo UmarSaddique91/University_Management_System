@@ -13,10 +13,10 @@
         public int CourseOfferingId { get; set; }
         public CourseOffering CourseOffering { get; set; }
 
-        
-        public DateTime EnrollmentDate { get; set; }
 
-        
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+
         public string Status { get; set; }
 
     }

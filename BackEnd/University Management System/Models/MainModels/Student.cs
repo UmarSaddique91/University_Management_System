@@ -14,10 +14,14 @@
 
         public Department? Department { get; set; }
 
-        public string? Program { get; set; }
+        public int? AcademicProgramId { get; set; }
+
+        public AcademicProgram? AcademicProgram { get; set; }
 
         public int Semester { get; set; }
 
         public string Status { get; set; }
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }

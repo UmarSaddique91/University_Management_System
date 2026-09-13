@@ -65,7 +65,7 @@ namespace University_Management_System.Controllers.EnrollmentManagement
             {
                 StudentId = model.StudentId,
                 CourseOfferingId = model.CourseOfferingId,
-                EnrollmentDate = model.EnrollmentDate,
+                CreatedAt = model.CreatedAt,
                 Status = model.Status
             };
 
@@ -101,7 +101,7 @@ namespace University_Management_System.Controllers.EnrollmentManagement
                     TeacherName = e.CourseOffering.Teacher.TeacherName,
                     SemesterNumber = e.CourseOffering.Semester.SemesterNumber,
 
-                    e.EnrollmentDate,
+                    e.CreatedAt,
                     e.Status
                 })
                 .ToList();
@@ -130,7 +130,7 @@ namespace University_Management_System.Controllers.EnrollmentManagement
                     TeacherName = e.CourseOffering.Teacher.TeacherName,
                     SemesterNumber = e.CourseOffering.Semester.SemesterNumber,
 
-                    e.EnrollmentDate,
+                    e.CreatedAt,
                     e.Status
                 })
                 .FirstOrDefault();
@@ -197,7 +197,7 @@ namespace University_Management_System.Controllers.EnrollmentManagement
             
             enrollment.StudentId = model.StudentId;
             enrollment.CourseOfferingId = model.CourseOfferingId;
-            enrollment.EnrollmentDate = model.EnrollmentDate;
+            enrollment.CreatedAt = model.CreatedAt;
             enrollment.Status = model.Status;
 
             _context.SaveChanges();

@@ -39,10 +39,14 @@ namespace University_Management_System.Controllers
 
         public IActionResult GetAllDepartment()
         {
-            var departments=_context.Departments
-                .Include(tr=>tr.Teachers)
-                .Include(tr=>tr.Courses)
-                .ToList();
+            var departments = _context.Departments
+        .Select(d => new
+        {
+            d.Id,
+            d.DepartmentName
+        })
+        .ToList();
+
             return Ok(departments);
         }
 

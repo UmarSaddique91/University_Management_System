@@ -10,10 +10,12 @@
 
         public int? DepartmentId { get; set; }
 
-        public string? Program { get; set; }
+        public int? AcademicProgramId { get; set; }
 
         public int Semester { get; set; }
 
         public string Status { get; set; }
+
+        
     }
 }

@@ -47,8 +47,7 @@ namespace University_Management_System.Controllers
             if (!string.IsNullOrEmpty(CourseName))
                 query = query.Where(tr => tr.CourseName.Contains(CourseName));
 
-            if (!string.IsNullOrEmpty(DepartmentName))
-                query = query.Where(tr => tr.DepartmentName.Contains(DepartmentName));
+            
 
             if (CreditHours>0)
                 query = query.Where(tr => tr.CreditHours==CreditHours);
@@ -81,8 +80,7 @@ namespace University_Management_System.Controllers
             if (!string.IsNullOrEmpty(course.CourseName))
                 ExistingCourse.CourseName = course.CourseName;
 
-            if (!string.IsNullOrEmpty(course.DepartmentName))
-                ExistingCourse.DepartmentName = course.DepartmentName;
+            
 
             if (course.CreditHours>0)
                 ExistingCourse.CreditHours = course.CreditHours;

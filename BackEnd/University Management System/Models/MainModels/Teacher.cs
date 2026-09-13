@@ -24,5 +24,7 @@ namespace University_Management_System.Models.MainModels
 
         [JsonIgnore]
         public Department? Department { get; set; }
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }

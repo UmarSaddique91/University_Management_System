@@ -325,9 +325,6 @@ namespace University_Management_System.Migrations
                     b.Property<int?>("DepartmentId")
                         .HasColumnType("int");
 
-                    b.Property<string>("DepartmentName")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Level")
                         .HasColumnType("nvarchar(max)");
 
@@ -396,7 +393,7 @@ namespace University_Management_System.Migrations
                     b.Property<int>("CourseOfferingId")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("EnrollmentDate")
+                    b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Status")
@@ -562,11 +559,14 @@ namespace University_Management_System.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("DepartmentId")
+                    b.Property<int?>("AcademicProgramId")
                         .HasColumnType("int");
 
-                    b.Property<string>("Program")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("int");
 
                     b.Property<string>("RollNumber")
                         .IsRequired()
@@ -589,6 +589,8 @@ namespace University_Management_System.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("AcademicProgramId");
+
                     b.HasIndex("DepartmentId");
 
                     b.ToTable("Students");
@@ -604,6 +606,9 @@ namespace University_Management_System.Migrations
 
                     b.Property<string>("Contact")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<int?>("DepartmentId")
                         .HasColumnType("int");
@@ -815,9 +820,15 @@ namespace University_Management_System.Migrations
 
             modelBuilder.Entity("University_Management_System.Models.MainModels.Student", b =>
                 {
+                    b.HasOne("University_Management_System.Models.MainModels.AcademicProgram", "AcademicProgram")
+                        .WithMany()
+                        .HasForeignKey("AcademicProgramId");
+
                     b.HasOne("University_Management_System.Models.MainModels.Department", "Department")
                         .WithMany()
                         .HasForeignKey("DepartmentId");
+
+                    b.Navigation("AcademicProgram");
 
                     b.Navigation("Department");
                 });
