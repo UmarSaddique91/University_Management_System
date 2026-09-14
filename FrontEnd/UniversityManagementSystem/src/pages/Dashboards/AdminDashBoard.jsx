@@ -2,6 +2,7 @@ import React, { useEffectEvent } from 'react'
 import Layout from '../../layout/Layout'
 import StatCard from '../../components/StatCard';
 import EnrollmentTrend from '../../components/EnrollmentTrend';
+import QuickActions from '../../components/QuickActions';
 import { UserRound,Landmark,LibraryBig,NotebookTabs,UsersRound} from 'lucide-react'
 import {useState, useEffect} from 'react';
 import axios from 'axios'
@@ -145,9 +146,17 @@ useEffect(()=>{
         />
       </div>
 
-        {/* Student Enrollment Trend Section */}
-        <div className='mt-4 w-full lg:w-[62%]'>
-          <EnrollmentTrend />
+        {/* Student Enrollment Trend & Quick Actions Section */}
+        <div className='mt-4 flex flex-col xl:flex-row gap-4'>
+          {/* Trend Chart (Maintains original full 62% width) */}
+          <div className='w-full xl:w-[62%]'>
+            <EnrollmentTrend />
+          </div>
+
+          {/* Quick Actions (Adjusted in the remaining 38% space next to Trend Chart) */}
+          <div className='w-full xl:w-[38%]'>
+            <QuickActions />
+          </div>
         </div>
         </div>
     </Layout>

@@ -1,7 +1,8 @@
 import React from 'react'
 import {useState} from 'react'
-import loginImg from '../assets/loginImg.png'
+import LoginImg from '../../assets/LoginImg.png'
 import {useNavigate} from 'react-router-dom';
+import axios from 'axios';
 
 
 const Login = () => {
@@ -11,14 +12,26 @@ const Login = () => {
   const [email,setEmail]= useState('');
   const [password,setPassword]=useState('');
 
-  const handleLogin=(e)=>{
+  const handleLogin=async (e)=>{
     e.preventDefault();
 
-    console.log("Submitted Button Clicked");
-    console.log("Email:",email);
-    console.log("Password:",password)
+    try {
 
-    navigate('/dashboard')
+      const response= await axios.post(
+        "https://localhost:7272/api/Auth/login",
+        {email:email,
+        password:password}
+      )
+
+      localStorage.setItem("token",response.data.token)
+
+       navigate('/dashboard')
+      
+    } catch (error) {
+      console.log("Login Failed", error)
+    }
+
+   
   }
 
   
@@ -27,14 +40,14 @@ const Login = () => {
 
         {/* Left SAECTION */}
         <div className="w-1/2 bg-white md:flex items-center justify-center">
-        <img src={loginImg} 
+        <img src={LoginImg} 
         alt="UMS Login Illustration" 
         className="object-cover h-full"/>
         </div>
 
         {/* Right Side Section */}
 
-        <div className="w-1/2 bg-white flex items-center justify-center shadow-lg ">
+        <div className="w-1/2 bg-white flex flex-col items-center justify-center shadow-lg py-8">
         <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-8 w-full max-w-md overflow-hidden">
             <h2 className="text-2xl font-bold mb-2">Welcome Back!</h2>
             <p className="text-slate-500">Sign in to access your UMS Dashboard</p>
@@ -83,15 +96,35 @@ const Login = () => {
               
             </div>
 
-
-            {/* Support */}
-
-            <div className="bg-gray-200 -mx-8 -mb-8 py-6 flex items-center justify-center mt-5">
-            <span className="text-slate-500">Need Help?</span>
-            <a href="mailto:support@university.com" className="text-blue-500 cursor-pointer hover:text-blue-700">Contact It Support</a>
+            {/* OR Divider */}
+            <div className="flex items-center my-6">
+              <div className="flex-1 border-t border-gray-200"></div>
+              <span className="px-3 text-xs text-gray-400 font-medium">OR</span>
+              <div className="flex-1 border-t border-gray-200"></div>
             </div>
 
+            {/* Don't have an account */}
+            <div className="text-center">
+              <p className="text-sm text-slate-500">
+                Don't have an account?{' '}
+                <span className="text-blue-500 font-semibold cursor-pointer hover:underline">
+                  Sign Up
+                </span>
+              </p>
+            </div>
 
+        </div>
+
+        {/* Copyright & Links outside sign-in card */}
+        <div className="text-center mt-6 text-xs text-slate-400 space-y-1">
+          <div className="flex justify-center items-center gap-2">
+            <span className="hover:underline cursor-pointer">Privacy Policy</span>
+            <span>|</span>
+            <span className="hover:underline cursor-pointer">Terms of Service</span>
+            <span>|</span>
+            <span className="hover:underline cursor-pointer">Contact Support</span>
+          </div>
+          <p>© 2026 University Management System. All rights reserved.</p>
         </div>
         </div>
 
