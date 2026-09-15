@@ -84,10 +84,14 @@ const Login = () => {
                   Keep me signed in
                 </label>
 
-                <span className="text-blue-500 hover:text-blue-700 cursor-pointer  ">Forgot Password?</span>
+                <span 
+                onClick={()=>navigate("forgotPassword")}
+                className="text-blue-500 hover:text-blue-700 cursor-pointer  ">Forgot Password?</span>
               </div>
               
-              <button type="submit" className="w-full bg-blue-500 hover:bg-blue-600 text-center py-3 cursor-pointer rounded rounded-lg mt-6 text-white">
+              <button 
+              
+              type="submit" className="w-full bg-blue-500 hover:bg-blue-600 text-center py-3 cursor-pointer rounded rounded-lg mt-6 text-white">
                 Sign In
                 </button>
                 
@@ -104,7 +108,9 @@ const Login = () => {
             </div>
 
             {/* Don't have an account */}
-            <div className="text-center">
+            <div 
+            onClick={()=>navigate("signUp")}
+            className="text-center">
               <p className="text-sm text-slate-500">
                 Don't have an account?{' '}
                 <span className="text-blue-500 font-semibold cursor-pointer hover:underline">
