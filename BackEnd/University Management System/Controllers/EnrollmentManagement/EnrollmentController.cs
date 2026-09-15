@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography.Xml;
 using University_Management_System.Constants;
 using University_Management_System.Data;
 using University_Management_System.DTOs;
@@ -141,6 +143,87 @@ namespace University_Management_System.Controllers.EnrollmentManagement
             }
 
             return Ok(enrollment);
+        }
+
+
+        //Get Api for Enrollment Graph Trend
+
+        [HttpGet("trend")]
+
+        public async Task<IActionResult> GetEnrollmentTrend([FromQuery] string period="6 Months")
+        {
+
+            var now = DateTime.UtcNow;
+
+            
+
+            var startOfMonth = new DateTime(
+
+                now.Year,
+                now.Month,
+                1,
+                0,
+                0,
+                0,
+                DateTimeKind.Utc
+                );
+
+            var startDate = period switch
+            {
+                "1 Year" => startOfMonth.AddMonths(-11),
+                "6 Months" => startOfMonth.AddMonths(-5),
+                "3 Months" => startOfMonth.AddMonths(-2),
+                "1 Month" => startOfMonth,
+                "1 Week" => now.AddDays(-7),
+                _=> now.AddMonths(-5)
+            };
+
+
+            var activeEnrollment =await  _context.Enrollments.Where(
+                en => en.Status == "active" &&
+                en.CreatedAt >= startDate &&
+               en.CreatedAt < now
+                ).GroupBy(en => new
+                {
+                    en.CreatedAt.Year,
+                    en.CreatedAt.Month
+                }
+
+                ).Select(group => new
+                {
+                    Year = group.Key.Year,
+                    Month = group.Key.Month,
+                    Count = group.Count()
+                }).OrderBy(x => x.Year).
+                ThenBy(x => x.Month).
+                ToListAsync();
+
+
+
+            //Now add the logic for showing the month data even if the enrollment is 0.
+
+            var enrollementData = new List<object>();
+
+            var month = startDate;
+
+            while (month <= startOfMonth)
+            {
+                var enrollment = activeEnrollment.FirstOrDefault(x =>
+                x.Year == month.Year&&
+                x.Month == month.Month
+                );
+
+                enrollementData.Add(new
+                {
+                    Year = month.Year,
+                    Month = month.Month,
+                    Count = enrollment?.Count ?? 0
+                });
+
+                month = month.AddMonths(1);
+            }
+
+            return Ok(enrollementData);
         }
 
 

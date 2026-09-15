@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using University_Management_System.Data;
 using University_Management_System.Data.Seed;
+using University_Management_System.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,6 +23,10 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.AddIdentity<IdentityUser, IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>().AddDefaultTokenProviders();
+
+//For EmailSmtp
+
+builder.Services.AddScoped<EmailService>();
 
 //JWT Authentication
 builder.Services.AddAuthentication(options =>

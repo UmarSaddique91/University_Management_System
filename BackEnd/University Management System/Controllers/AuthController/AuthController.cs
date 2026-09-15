@@ -6,6 +6,7 @@ using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using University_Management_System.Constants;
+using University_Management_System.Services;
 
 
 namespace University_Management_System.Controllers
@@ -16,11 +17,15 @@ namespace University_Management_System.Controllers
     {
         private readonly UserManager<IdentityUser> _userManager;
         private readonly IConfiguration _configuration;
+        private readonly EmailService _emailService;
 
-        public AuthController(UserManager<IdentityUser> userManager, IConfiguration configuration)
+        public AuthController(UserManager<IdentityUser> userManager,
+            IConfiguration configuration,
+            EmailService emailService)
         {
             _userManager = userManager;
             _configuration = configuration;
+            _emailService = emailService;
         }
 
         // POST: api/auth/login
@@ -101,6 +106,97 @@ namespace University_Management_System.Controllers
             }
 
             return BadRequest(result.Errors);
+        }
+
+
+
+        //Post Request for forgot Password
+
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDTO model)
+        {
+            var user = await _userManager.FindByEmailAsync(model.Email);
+
+            if (user == null)
+            {
+                return Ok(new
+                {
+                    message = "User Not Found"
+                });
+            }
+
+            var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
+
+            var encodedToken = Uri.EscapeDataString(resetToken);
+            var encodedEmail = Uri.EscapeDataString(user.Email!);
+
+            var resetLink =
+                $"http://localhost:5173/resetPassword?email={encodedEmail}&token={encodedToken}";
+
+
+            var subject = "Reset Your Password";
+
+            var body = $@"
+    <h2>Password Reset</h2>
+    <p>You requested to reset your password.</p>
+    <p>Click the link below to reset it:</p>
+    <a href='{resetLink}'>Reset Password</a>
+";
+
+            await _emailService.SendEmailAsync(
+                user.Email!,
+                subject,
+                body
+            );
+
+
+            return Ok(new
+            {
+                message = "Reset Link Sent Successfully"
+            });
+        }
+
+
+
+
+
+        //Post Request for Reset Password
+
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDTO model)
+        {
+            
+            var user = await _userManager.FindByEmailAsync(model.Email);
+
+            if (user == null)
+            {
+                return BadRequest(new
+                {
+                    message = "Invalid password reset request"
+                });
+            }
+
+            
+            var result = await _userManager.ResetPasswordAsync(
+                user,
+                model.Token,
+                model.NewPassword
+            );
+
+            if (!result.Succeeded)
+            {
+                return BadRequest(new
+                {
+                    message = "Password could not be reset",
+                    errors = result.Errors
+                });
+            }
+
+            return Ok(new
+            {
+                message = "Password reset successfully"
+            });
         }
     }
 
