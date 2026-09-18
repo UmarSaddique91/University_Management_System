@@ -1,11 +1,13 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
-using University_Management_System.DTOs;
-using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Text;
 using University_Management_System.Constants;
+using University_Management_System.Data;
+using University_Management_System.DTOs;
+using University_Management_System.Models.MainModels;
 using University_Management_System.Services;
 
 
@@ -19,13 +21,17 @@ namespace University_Management_System.Controllers
         private readonly IConfiguration _configuration;
         private readonly EmailService _emailService;
 
+        private readonly ApplicationDbContext _context;
+
         public AuthController(UserManager<IdentityUser> userManager,
             IConfiguration configuration,
-            EmailService emailService)
+            EmailService emailService,
+            ApplicationDbContext context)
         {
             _userManager = userManager;
             _configuration = configuration;
             _emailService = emailService;
+            _context = context;
         }
 
         // POST: api/auth/login
@@ -59,7 +65,7 @@ namespace University_Management_System.Controllers
                 var token = new JwtSecurityToken(
                     issuer: _configuration["JWT:Issuer"],
                     audience: _configuration["JWT:Audience"],
-                    expires: DateTime.Now.AddHours(1),
+                    expires: DateTime.Now.AddHours(8),
                     claims: authClaims,
                     signingCredentials : new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
                     );
@@ -102,8 +108,25 @@ namespace University_Management_System.Controllers
                 {
                     return BadRequest(new { message = (roleResult.Errors) });
                 }
-                return Ok(new { message = "User registered successfully!" });
+
+
+
+                //Add User in Student Table
+
+
+                var student = new Student
+                {
+                    UserId = user.Id,
+                    Email = user.Email,
+                    Status = "Active"
+                };
+
+                _context.Students.Add(student);
+                await _context.SaveChangesAsync();
+                return Ok(new { message = "User Registered Successfully!" });
             }
+
+           
 
             return BadRequest(result.Errors);
         }

@@ -104,6 +104,7 @@ namespace University_Management_System.Controllers.StudentManagement
                 {
                     student.Id,
                     student.UserId,
+                    student.Email,
                     student.StudentName,
                     student.RollNumber,
                     student.DepartmentId,
@@ -111,6 +112,9 @@ namespace University_Management_System.Controllers.StudentManagement
             ? student.Department.DepartmentName
             : null,
                     student.AcademicProgramId,
+                    ProgramName = student.AcademicProgram != null
+    ? student.AcademicProgram.ProgramName
+    : null,
                     student.Semester,
                     student.Status
                 })
@@ -188,7 +192,7 @@ namespace University_Management_System.Controllers.StudentManagement
         //Delete Student API
 
         [HttpDelete("{id}")]
-        public IActionResult DeleteStudent(int id)
+        public async Task <IActionResult> DeleteStudent(int id)
         {
             var student = _context.Students
                 .FirstOrDefault(s => s.Id == id);
@@ -198,9 +202,26 @@ namespace University_Management_System.Controllers.StudentManagement
                 return NotFound(new { message = "Student not found" });
             }
 
-            _context.Students.Remove(student);
-            _context.SaveChanges();
+       
 
+
+
+            var user = await _userManager.FindByIdAsync(student.UserId!);
+
+            // Identity user delete karo
+            if (user != null)
+            {
+                var userResult = await _userManager.DeleteAsync(user);
+
+                if (!userResult.Succeeded)
+                {
+                    return BadRequest(userResult.Errors);
+                }
+            }
+
+            // Students table ki row delete karo
+            _context.Students.Remove(student);
+            await _context.SaveChangesAsync();
             return Ok(new { message = "Student deleted successfully" });
         }
     }

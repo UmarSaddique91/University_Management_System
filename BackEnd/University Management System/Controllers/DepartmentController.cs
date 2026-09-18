@@ -65,7 +65,7 @@ namespace University_Management_System.Controllers
 
             var updatedDepartment=ExistingDepartment.DepartmentName = department.DepartmentName;
             _context.SaveChanges();
-            return Ok(updatedDepartment);
+            return Ok(new { message = $"Course Updated Successfully to {updatedDepartment}" });
         }
 
         //DeleteAPI

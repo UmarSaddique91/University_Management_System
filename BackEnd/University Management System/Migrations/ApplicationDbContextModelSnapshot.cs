@@ -568,11 +568,14 @@ namespace University_Management_System.Migrations
                     b.Property<int?>("DepartmentId")
                         .HasColumnType("int");
 
-                    b.Property<string>("RollNumber")
+                    b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("Semester")
+                    b.Property<string>("RollNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("Semester")
                         .HasColumnType("int");
 
                     b.Property<string>("Status")
@@ -580,7 +583,6 @@ namespace University_Management_System.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("StudentName")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("UserId")
@@ -613,7 +615,7 @@ namespace University_Management_System.Migrations
                     b.Property<int?>("DepartmentId")
                         .HasColumnType("int");
 
-                    b.Property<string>("DepartmentName")
+                    b.Property<string>("Email")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Specialization")
@@ -626,6 +628,9 @@ namespace University_Management_System.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("TeacherName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserId")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");

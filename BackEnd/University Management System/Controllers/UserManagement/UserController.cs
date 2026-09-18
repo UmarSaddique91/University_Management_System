@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using University_Management_System.Constants;
+using University_Management_System.Data;
+using University_Management_System.Models.MainModels;
 
 namespace University_Management_System.Controllers.UserManagement
 {
@@ -15,12 +17,16 @@ namespace University_Management_System.Controllers.UserManagement
         private readonly UserManager<IdentityUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
 
+        private readonly ApplicationDbContext _context;
+
         public UserController(UserManager<IdentityUser> userManager,
-            RoleManager<IdentityRole>roleManager
+            RoleManager<IdentityRole>roleManager,
+            ApplicationDbContext context
             )
         {
             _userManager = userManager;
             _roleManager=roleManager;
+            _context = context;
         }
 
 
@@ -65,11 +71,15 @@ namespace University_Management_System.Controllers.UserManagement
         }
 
 
+
+
+
         //For Assigning Roles
 
         [HttpPost("{userId}/roles/{roleName}")]
         public async Task<IActionResult> AssignRole(string userId, string roleName)
         {
+            // Find User
             var user = await _userManager.FindByIdAsync(userId);
 
             if (user == null)
@@ -77,22 +87,84 @@ namespace University_Management_System.Controllers.UserManagement
                 return NotFound(new { message = "User Not Found" });
             }
 
-            if(!await _roleManager.RoleExistsAsync(roleName)){
+
+            // Check Role Exists
+            if (!await _roleManager.RoleExistsAsync(roleName))
+            {
                 return BadRequest(new { message = "Role not Found" });
             }
-            {
 
+
+            // Get Current Role
+            var currentRoles = await _userManager.GetRolesAsync(user);
+
+
+            // Remove Previous Role
+            if (currentRoles.Count > 0)
+            {
+                await _userManager.RemoveFromRoleAsync(
+                    user,
+                    currentRoles[0]
+                );
             }
 
+
+            // Assign New Role
             var result = await _userManager.AddToRoleAsync(user, roleName);
 
+
+            // First confirm role was assigned successfully
             if (!result.Succeeded)
             {
                 return BadRequest(result.Errors);
             }
 
-            return Ok(new { message = $"Role {roleName} assigned successfully" });
+
+            // If new role is Teacher
+            if (roleName == SystemRoles.Teacher)
+            {
+                // Check if Teacher profile already exists
+                var teacherExist = _context.Teachers
+                    .Any(t => t.UserId == user.Id);
+
+
+                // Find Student profile linked with same Identity User
+                var student = _context.Students
+                    .FirstOrDefault(s => s.UserId == user.Id);
+
+
+                // Remove temporary Student profile
+                if (student != null)
+                {
+                    _context.Students.Remove(student);
+                }
+
+
+                // Create Teacher profile if it doesn't already exist
+                if (!teacherExist)
+                {
+                    var teacher = new Teacher
+                    {
+                        UserId = user.Id,
+                        Email = user.Email
+                    };
+
+                    _context.Teachers.Add(teacher);
+                }
+
+
+                // Save Student delete + Teacher add together
+                await _context.SaveChangesAsync();
+            }
+
+
+            return Ok(new
+            {
+                message = $"Role {roleName} assigned successfully"
+            });
         }
+
+
 
 
         //For removing role

@@ -7,9 +7,11 @@ namespace University_Management_System.Models.MainModels
     {
         public int Id { get; set; }
         public string? TeacherId { get; set; }
+        public string?UserId { get; set; }
+        public string? Email { get; set; }
         public string? TeacherName { get; set; }
 
-        public string? DepartmentName { get; set; }
+        
 
         public string? Specialization { get; set; }
 
@@ -18,8 +20,6 @@ namespace University_Management_System.Models.MainModels
         public string? Status { get; set; } = "Active";
 
         
-
-        [JsonIgnore]
         public int? DepartmentId { get; set; }
 
         [JsonIgnore]
