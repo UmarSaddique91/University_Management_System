@@ -1,53 +1,10 @@
 import React from 'react';
 import LoginImg from '../../assets/LoginImg.png';
 import { useNavigate } from 'react-router-dom';
-import { UserPlus, Mail, Lock, Eye, EyeOff } from 'lucide-react';
-import { useState } from 'react';
-import axios from 'axios';
+import { UserPlus, Mail, Lock, Eye } from 'lucide-react';
 
 const SignUp = () => {
   const navigate = useNavigate();
-
-  //State
-  const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [message, setMessage] = useState('');
-  const [isError, setIsError] = useState(false);
-
-
-  //Handle Signup
-
-  const handleSignup = async (e) => {
-    e.preventDefault();
-
-    try {
-      const response = await axios.post(
-
-        "https://localhost:7272/api/auth/register",
-        {
-          email: email,
-          password: password
-        }
-
-
-
-      );
-
-      setMessage(response.data.message)
-
-      setIsError(false)
-
-      setTimeout(() => {
-        navigate("/")
-      }, 2000)
-
-    } catch (error) {
-      setMessage("Registration Failed", error)
-      setIsError(true)
-
-    }
-  }
 
   return (
     <div className="w-full min-h-screen bg-white flex">
@@ -79,7 +36,7 @@ const SignUp = () => {
           </p>
 
           {/* Form */}
-          <form onSubmit={handleSignup} className="space-y-4">
+          <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
 
             {/* Email Address */}
             <div>
@@ -90,8 +47,6 @@ const SignUp = () => {
                 <Mail className="absolute left-3.5 w-4 h-4 text-gray-400 pointer-events-none" />
                 <input
                   type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
                   id="email"
                   placeholder="Enter your email"
                   className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
@@ -107,20 +62,12 @@ const SignUp = () => {
               <div className="relative flex items-center">
                 <Lock className="absolute left-3.5 w-4 h-4 text-gray-400 pointer-events-none" />
                 <input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  type="password"
                   id="password"
                   placeholder="Create password"
                   className="w-full pl-10 pr-10 py-2.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 cursor-pointer"
-                >
-                  {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
-                </button>
+                <Eye className="absolute right-3.5 w-4 h-4 text-gray-400 cursor-pointer hover:text-gray-600" />
               </div>
             </div>
 
@@ -145,16 +92,6 @@ const SignUp = () => {
                 Create Account
               </button>
             </div>
-
-            {message && (
-
-              <p
-                className={`text-sm text-center mt-3 ${isError ? "text-red-500" : "text-green-600"
-                  }`}
-              >
-                {message}
-              </p>
-            )}
 
           </form>
 

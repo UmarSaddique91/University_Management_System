@@ -97,6 +97,15 @@ const Layout = ({ children }) => {
                             <span className="text-[14px]">Teachers</span>
                         </a>
 
+                         <a href="/students"
+                            className={`flex items-center text-white gap-2 py-2 px-2 
+                rounded rounded-md w-full transition-colors 
+                ${location.pathname === '/students' ? 'bg-blue-500' : 'bg-transparent hover:bg-blue-600'}  `}>
+
+                            <Users className="text-white" size={14} />
+                            <span className="text-[14px]">Students</span>
+                        </a>
+
 
                         <a href="/courses"
                             className={`flex items-center text-white gap-2 py-2 px-2 

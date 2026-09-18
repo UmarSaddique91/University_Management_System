@@ -4,6 +4,8 @@ import DashBoard from './pages/Dashboards/AdminDashBoard'
 import ForgotPassword from './pages/Auth/ForgotPassword'
 import ResetPassword from './pages/Auth/ResetPassword'
 import SignUp from './pages/Auth/SignUp'
+import Teachers from './pages/Teachers'
+import Students from './pages/Students'
 
 import { Routes, Route } from 'react-router-dom'
 
@@ -15,6 +17,8 @@ const App = () => {
       <Route path='/forgotPassword' element={<ForgotPassword/>}/>
       <Route path='/resetPassword' element={<ResetPassword/>}/>
       <Route path='/signUp' element={<SignUp/>}/>
+      <Route path='/teachers' element={<Teachers/>}/>
+      <Route path='/students' element={<Students/>} />
       
     </Routes>
   )
