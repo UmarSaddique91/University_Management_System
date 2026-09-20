@@ -1,137 +1,135 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Layout from '../layout/Layout';
 import StatCard from '../components/StatCard';
 import FilterBar from '../components/common/FilterBar';
 import DataTable from '../components/common/DataTable';
-import { Users, UserRound, Landmark, UserPlus, Plus } from 'lucide-react';
-
-import {useState,useEffect} from 'react';
+import Form from '../components/common/Form';
+import { Users, UserRound, Landmark, Plus } from 'lucide-react';
 import axios from 'axios';
 
 const Teachers = () => {
+  const [teacher, setTeacher] = useState([]);
+  const [department, setDepartment] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectDepartment, setSelectDepartment] = useState('');
+  const [selectStatus, setSelectStatus] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedTeacher, setSelectedTeacher] = useState(null);
 
-const [teacher,setTeacher]=useState([]);
-const [department,setDepartment]=useState([]);
-const [teacherThisMonth, setTeacherThisMonth]= useState(0);
-const [teacherGrwothThisMonth, setTeacherGrowthThisMonth]=useState(0);
-const [searchTerm,setSearchTerm]= useState('');
-const [selectDepartment, setSelectDepartment]=useState('');
-const [selectStatus,setSelectStatus]= useState('');
-
-
-
-
-
-
-
-// Axios Code 
-useEffect(()=>{
-  const fetchTeachers=async()=>{
+  const fetchTeachers = async () => {
     try {
-      const token=localStorage.getItem("token")
+      const token = localStorage.getItem("token");
 
+      const [teacherResponse, departmentResponse] = await Promise.all([
+        axios.get("https://localhost:7272/api/Teacher", {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        axios.get("https://localhost:7272/api/Department", {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
 
-      //Teacher
-      const Teacherresponse= await axios.get(
-        "https://localhost:7272/api/Teacher",
-        {
-          headers:{
-            Authorization:`Bearer ${token}`
+      setTeacher(teacherResponse.data);
+      setDepartment(departmentResponse.data);
+    } catch (error) {
+      console.log("Failed to fetch teachers data", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchTeachers();
+  }, []);
+
+  // Reset pagination to page 1 whenever filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectDepartment, selectStatus]);
+
+  const handleAddClick = () => {
+    setSelectedTeacher(null);
+    setShowModal(true);
+  };
+
+  const handleEdit = (row) => {
+    setSelectedTeacher(row);
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setSelectedTeacher(null);
+  };
+
+  const handleFormSubmit = async (formData) => {
+    try {
+      const token = localStorage.getItem("token");
+
+      const payload = {
+        teacherName: formData.teacherName,
+        teacherId: formData.teacherId,
+        departmentId: formData.departmentId ? Number(formData.departmentId) : null,
+        specialization: formData.specialization || '',
+        email: formData.email,
+      };
+
+      if (selectedTeacher) {
+        // Edit Mode: PUT /api/Teacher/{id}
+        await axios.put(
+          `https://localhost:7272/api/Teacher/${selectedTeacher.dbId}`,
+          payload,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
           }
+        );
+      } else {
+        // Create Mode: POST /api/Teacher
+        await axios.post("https://localhost:7272/api/Teacher", payload, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      }
+
+      handleCloseModal();
+      await fetchTeachers();
+    } catch (error) {
+      console.log("Failed to save teacher", error);
+      alert(error.response?.data?.message || "Failed to save teacher");
+    }
+  };
+
+  const handleToggleStatus = async (row) => {
+    if (!row.isRegistered) {
+      alert("Cannot activate teacher: This teacher has not completed registration yet.");
+      return;
+    }
+
+    const newStatus = row.status === 'Active' ? 'Inactive' : 'Active';
+
+    try {
+      const token = localStorage.getItem("token");
+      await axios.patch(
+        `https://localhost:7272/api/Teacher/${row.dbId}/status`,
+        { status: newStatus },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
 
-
-      //Total Teacher This Month
-
-
-      const teacherThisMonth= await axios.get(
-        "https://localhost:7272/api/DashboardSummary/summary",
-        {
-          headers:{
-            Authorization:`Bearer ${token}`
-          }
-        }
-      )
-
-
-      const departmentResponse=await axios.get(
-        "https://localhost:7272/api/Department",
-
-        {
-          headers:{
-            Authorization:`Bearer ${token}`
-          }
-        }
-      )
-
-
-
-
-
-
-      // Teacher 
-      setTeacher(Teacherresponse.data);
-      console.log(Teacherresponse.data);
-
-
-      //Teacher this Month
-
-      setTeacherThisMonth(teacherThisMonth.data)
-
-      //teacher Growth this month
-
-      setTeacherGrowthThisMonth(teacherThisMonth.data)
-
-      //Deprtment
-
-      setDepartment(departmentResponse.data)
-      
-    } 
-    
-    
-    catch (error) {
-      console.log("Teacher Nor Found",error)
+      setTeacher((prev) =>
+        prev.map((t) => (t.id === row.dbId ? { ...t, status: newStatus } : t))
+      );
+    } catch (error) {
+      console.log("Failed to update teacher status", error);
+      alert(error.response?.data?.message || "Failed to update teacher status");
     }
-  }
-  fetchTeachers();
-},[])
+  };
 
-
-const handleDelete = async (row) => {
-  try {
-    const token = localStorage.getItem("token");
-
-    await axios.delete(
-      `https://localhost:7272/api/Teacher/${row.dbId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      }
-    );
-
-    setTeacher(prev =>
-      prev.filter(t => t.id !== row.dbId)
-    );
-
-  } catch (error) {
-    console.log("Teacher Delete Failed", error);
-  }
-};
-
-
-
-//Edit Row
-
-
-
-
-
-
-
-
-  // Current date formatted according to the design
   const currentDate = new Date().toLocaleDateString('en-GB', {
     weekday: 'long',
     day: '2-digit',
@@ -139,42 +137,24 @@ const handleDelete = async (row) => {
     year: 'numeric',
   });
 
-
-
-
-
-
-
-
-  // Filter dropdown configurations (UI only)
   const filterList = [
     {
       label: 'All Departments',
-      value:selectDepartment,
-      onChange:(e)=>setSelectDepartment(e.target.value),
-
+      value: selectDepartment,
+      onChange: (e) => setSelectDepartment(e.target.value),
       options: [
         'All Departments',
-        ...department.map(d=>d.departmentName)
+        ...department.map((d) => d.departmentName),
       ],
     },
     {
       label: 'All Status',
       value: selectStatus,
-      onChange:(e)=>setSelectStatus(e.target.value),
-      options: ['All Status', 'Active', 'On Leave'],
+      onChange: (e) => setSelectStatus(e.target.value),
+      options: ['All Status', 'Active', 'Inactive'],
     },
   ];
 
-
-
-
-
-
-
-
-
-  // Column definitions for the DataTable
   const columns = [
     {
       key: 'id',
@@ -183,15 +163,8 @@ const handleDelete = async (row) => {
     {
       key: 'name',
       label: 'Teacher Name',
-      render: (name, row) => (
-        <div className="flex items-center gap-3">
-          <img
-            src={row.avatar}
-            alt={name}
-            className="w-8 h-8 rounded-full object-cover border border-gray-200"
-          />
-          <span className="font-medium text-gray-900">{name}</span>
-        </div>
+      render: (name) => (
+        <span className="font-medium text-gray-900">{name}</span>
       ),
     },
     {
@@ -209,18 +182,36 @@ const handleDelete = async (row) => {
     {
       key: 'status',
       label: 'Status',
-      render: (status) => {
+      render: (status, row) => {
         const isActive = status === 'Active';
+        const isRegistered = row?.isRegistered;
+
+        if (!isRegistered) {
+          return (
+            <button
+              type="button"
+              onClick={() => handleToggleStatus(row)}
+              title="Pending Registration - Teacher cannot be activated until they complete registration"
+              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-600 border border-rose-200/60 cursor-not-allowed opacity-80"
+            >
+              Inactive
+            </button>
+          );
+        }
+
         return (
-          <span
-            className={`inline-flex items-center px-3 py-0.5 rounded-full text-xs font-semibold ${
+          <button
+            type="button"
+            onClick={() => handleToggleStatus(row)}
+            title={`Click to set ${isActive ? 'Inactive' : 'Active'}`}
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold cursor-pointer transition-all hover:scale-105 active:scale-95 ${
               isActive
-                ? 'bg-emerald-50 text-emerald-600 border border-emerald-200/60'
-                : 'bg-rose-50 text-rose-600 border border-rose-200/60'
+                ? 'bg-emerald-50 text-emerald-600 border border-emerald-200/60 hover:bg-emerald-100'
+                : 'bg-rose-50 text-rose-600 border border-rose-200/60 hover:bg-rose-100'
             }`}
           >
             {status}
-          </span>
+          </button>
         );
       },
     },
@@ -228,76 +219,142 @@ const handleDelete = async (row) => {
       key: 'courses',
       label: 'Assigned Courses',
       align: 'center',
+      render: (courses, row) => (
+        <span className="text-gray-700 font-medium">
+          {row.assignedCoursesCount > 0 ? row.assignedCoursesCount : '-'}
+        </span>
+      ),
     },
   ];
 
-
-
-
-
-
-
-//add the original teacher table into table 
-  const teachersData= teacher.map((item)=>({
-    dbId:item.id,
+  const teachersData = teacher.map((item) => ({
+    dbId: item.id,
     id: item.teacherId || '-',
+    teacherId: item.teacherId || '',
     name: item.teacherName || '-',
+    teacherName: item.teacherName || '',
     dept: item.departmentName || '-',
+    departmentId: item.departmentId,
     spec: item.specialization || '-',
-    email:item.email || '-',
-    status: item.status || '-',
-    courses: '-',
-    avatar:'-'
+    specialization: item.specialization || '',
+    email: item.email || '-',
+    status: item.status || 'Inactive',
+    assignedCoursesCount: item.assignedCoursesCount || 0,
+    userId: item.userId,
+    isRegistered: Boolean(item.userId && item.email),
   }));
 
+  const filterTeacher = teachersData
+    .filter((item) => {
+      const search = searchTerm.toLowerCase();
 
+      const matchSearch =
+        item.name.toLowerCase().includes(search) ||
+        item.id.toLowerCase().includes(search) ||
+        item.email.toLowerCase().includes(search);
 
+      const matchDepartment =
+        selectDepartment === '' ||
+        selectDepartment === 'All Departments' ||
+        item.dept === selectDepartment;
 
+      const matchStatus =
+        selectStatus === '' ||
+        selectStatus === 'All Status' ||
+        item.status === selectStatus;
 
+      return matchSearch && matchDepartment && matchStatus;
+    })
+    .map((item, index) => ({
+      ...item,
+      serial: index + 1,
+    }));
 
+  const teacherInputFields = selectedTeacher
+    ? [
+        {
+          name: 'teacherName',
+          label: 'Teacher Name',
+          type: 'text',
+          placeholder: 'Enter Teacher Name',
+          required: true,
+        },
+        {
+          name: 'teacherId',
+          label: 'Teacher ID',
+          type: 'text',
+          placeholder: 'e.g. TCH-001',
+          required: true,
+        },
+        {
+          name: 'specialization',
+          label: 'Specialization',
+          type: 'text',
+          placeholder: 'e.g. Artificial Intelligence',
+          required: false,
+        },
+      ]
+    : [
+        {
+          name: 'teacherName',
+          label: 'Teacher Name',
+          type: 'text',
+          placeholder: 'Enter Teacher Name',
+          required: true,
+        },
+        {
+          name: 'teacherId',
+          label: 'Teacher ID',
+          type: 'text',
+          placeholder: 'e.g. TCH-001',
+          required: true,
+        },
+        {
+          name: 'specialization',
+          label: 'Specialization',
+          type: 'text',
+          placeholder: 'e.g. Artificial Intelligence',
+          required: false,
+        },
+        {
+          name: 'email',
+          label: 'Official Email',
+          type: 'email',
+          placeholder: 'teacher@university.edu',
+          required: true,
+        },
+      ];
 
+  const teacherDropdownFields = [
+    {
+      name: 'departmentId',
+      label: 'Department',
+      placeholder: 'Select Department',
+      searchPlaceholder: 'Search Department...',
+      required: true,
+      options: department.map((item) => ({
+        label: item.departmentName,
+        value: item.id,
+      })),
+    },
+  ];
 
+  const formInitialValues = selectedTeacher
+    ? {
+        teacherName: selectedTeacher.teacherName,
+        teacherId: selectedTeacher.teacherId,
+        specialization: selectedTeacher.specialization,
+        departmentId: selectedTeacher.departmentId,
+      }
+    : {};
 
+  // Real summary card metrics based on full teacher dataset
+  const totalTeachersCount = teacher.length;
+  const activeTeachersCount = teacher.filter((t) => t.status === 'Active').length;
+  const departmentsCoveredCount = new Set(
+    teacher.map((t) => t.departmentId).filter(Boolean)
+  ).size;
 
-  //Filter Teacher 
-
-  const filterTeacher= teachersData.filter((item)=>{
-
-    const search= searchTerm.toLowerCase();
-
-
-    const matchSearch=
-item.name.toLowerCase().includes(search)||
-    item.id.toLowerCase().includes(search)||
-    item.email.toLowerCase().includes(search)
-
-
-
-    const matchDepartment=
-
-    selectDepartment==='' ||
-    selectDepartment==="All Departments" ||
-    item.dept===selectDepartment;
-
-
-
-    const matchStatus=
-
-    selectStatus==='' ||
-    selectStatus==="All Status" ||
-    item.status===selectStatus;
-    
-
-
-
-    return matchSearch && matchDepartment && matchStatus;
-    
-    
-  }
-  
-  
-  )
-  
   return (
     <Layout>
       <div className="space-y-4">
@@ -318,11 +375,12 @@ item.name.toLowerCase().includes(search)||
         <FilterBar
           searchPlaceholder="Search teachers by name, ID, or email..."
           searchValue={searchTerm}
-          onSearchChange={(e)=>setSearchTerm(e.target.value)}
+          onSearchChange={(e) => setSearchTerm(e.target.value)}
           filters={filterList}
           actionButton={{
             label: 'Add Teacher',
             icon: Plus,
+            onClick: handleAddClick,
           }}
         />
 
@@ -330,9 +388,7 @@ item.name.toLowerCase().includes(search)||
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           <StatCard
             Title="Total Teachers"
-            Value={teacher.length}
-            Change={`↑ ${teacherThisMonth.teacherGrowthPercentage}`}
-            SubText={`+${teacherThisMonth.teacherThisMonth} this month`}
+            Value={totalTeachersCount}
             Icon={Users}
             iconBg="bg-blue-500/20"
             cardBg="bg-blue-500/5"
@@ -340,39 +396,57 @@ item.name.toLowerCase().includes(search)||
           />
           <StatCard
             Title="Active Teachers"
-            Value={teacher.filter(t=> t.status==="Active").length}
-            
+            Value={activeTeachersCount}
             Icon={UserRound}
-            iconBg="bg-green-700/20"
-            cardBg="bg-green-700/5"
-            iconcolor="text-green-700"
+            iconBg="bg-emerald-700/20"
+            cardBg="bg-emerald-700/5"
+            iconcolor="text-emerald-700"
           />
           <StatCard
             Title="Departments Covered"
-            Value={department.length}
-            Change=""
-            SubText="No change"
+            Value={departmentsCoveredCount}
             Icon={Landmark}
             iconBg="bg-purple-700/20"
             cardBg="bg-purple-700/5"
             iconcolor="text-purple-700"
           />
-          
         </div>
 
         {/* Teachers DataTable */}
         <DataTable
           title="All Teachers"
-          count={teacher.length}
-        onDelete={handleDelete}
+          count={filterTeacher.length}
           columns={columns}
           data={filterTeacher}
           showActions={true}
+          onEdit={handleEdit}
+          pagination={true}
+          pageSize={10}
+          currentPage={currentPage}
+          onPageChange={setCurrentPage}
         />
+
+        {/* Reusable Form Modal for Add & Edit */}
+        {showModal && (
+          <Form
+            title={selectedTeacher ? 'Edit Teacher' : 'Add Teacher'}
+            subtitle={
+              selectedTeacher
+                ? 'Update teacher academic and faculty details.'
+                : 'Create teacher record with official university email.'
+            }
+            primaryButtonText={selectedTeacher ? 'Save Changes' : 'Add Teacher'}
+            cancelButtonText="Cancel"
+            initialValues={formInitialValues}
+            onClose={handleCloseModal}
+            onSubmit={handleFormSubmit}
+            inputFields={teacherInputFields}
+            dropdownFields={teacherDropdownFields}
+          />
+        )}
       </div>
     </Layout>
   );
 };
 
 export default Teachers;
-

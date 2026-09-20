@@ -7,7 +7,42 @@ const FilterBar = ({
   onSearchChange,
   filters = [],
   actionButton,
+  buttonText,
+  onActionClick,
 }) => {
+  // Render Action Button if provided
+  const renderActionButton = () => {
+    if (!actionButton && !buttonText) return null;
+
+    if (React.isValidElement(actionButton)) {
+      return actionButton;
+    }
+
+    const isObject = typeof actionButton === 'object' && actionButton !== null;
+    const isString = typeof actionButton === 'string';
+
+    const label =
+      (isObject ? (actionButton.label || actionButton.text || actionButton.title) : null) ||
+      (isString ? actionButton : null) ||
+      buttonText ||
+      'Add New';
+
+    const IconComponent = isObject && actionButton.icon !== undefined ? actionButton.icon : Plus;
+    const onClick = (isObject && actionButton.onClick) || onActionClick;
+    const className = isObject && actionButton.className ? actionButton.className : '';
+
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className={`flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-colors cursor-pointer shadow-2xs whitespace-nowrap ${className}`}
+      >
+        {IconComponent && <IconComponent className="w-4 h-4" />}
+        <span>{label}</span>
+      </button>
+    );
+  };
+
   return (
     <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 my-4">
       {/* Search Bar */}
@@ -49,7 +84,8 @@ const FilterBar = ({
           </div>
         ))}
 
-        
+        {/* Action Button */}
+        {renderActionButton()}
       </div>
     </div>
   );
