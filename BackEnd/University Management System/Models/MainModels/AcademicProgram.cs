@@ -4,11 +4,11 @@
     {
         public int Id { get; set; }
 
-        public string ProgramName { get; set; }
+        public string? ProgramName { get; set; }
 
-        public string ProgramCode { get; set; }
+        public string? ProgramCode { get; set; }
 
-        public int DurationInSemesters { get; set; }
+        public int? DurationInSemesters { get; set; }
 
 
         //Foreign Key

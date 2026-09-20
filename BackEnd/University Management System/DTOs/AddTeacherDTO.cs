@@ -1,4 +1,4 @@
-﻿namespace University_Management_System.DTOs
+namespace University_Management_System.DTOs
 {
     public class AddTeacherDTO
     {
@@ -13,5 +13,6 @@
 
         public string? Specialization { get; set; }
         public string? Status { get; set; }
+        public int AssignedCoursesCount { get; set; }
     }
 }

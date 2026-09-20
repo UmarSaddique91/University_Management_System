@@ -1,5 +1,6 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -91,44 +92,111 @@ namespace University_Management_System.Controllers
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            var user = new IdentityUser { UserName = model.Email, Email = model.Email };
-
-            var existingUser = await _userManager.FindByEmailAsync(model.Email);
-            if(existingUser != null)
+            if (string.IsNullOrWhiteSpace(model.Token))
             {
-                return BadRequest(new { message = "User Already Registered" });
-            }
-            var result = await _userManager.CreateAsync(user, model.Password);
-
-            if (result.Succeeded)
-            {
-                var roleResult=await _userManager.AddToRoleAsync(user, SystemRoles.Student);
-
-                if (!roleResult.Succeeded)
+                if (string.IsNullOrWhiteSpace(model.Email))
                 {
-                    return BadRequest(new { message = (roleResult.Errors) });
+                    return BadRequest(new { message = "Email is required" });
                 }
 
+                var normalizedEmail = model.Email.Trim().ToLower();
 
+                var teacher = await _context.Teachers
+                    .FirstOrDefaultAsync(t => t.Email != null && t.Email.ToLower() == normalizedEmail && t.UserId == null && t.Status == "Inactive");
 
-                //Add User in Student Table
-
-
-                var student = new Student
+                if (teacher == null)
                 {
-                    UserId = user.Id,
-                    Email = user.Email,
-                    Status = "Active"
-                };
+                    return BadRequest(new { message = "No pending teacher account found for this email. Please contact the administrator." });
+                }
 
-                _context.Students.Add(student);
+                var existingTeacherUser = await _userManager.FindByEmailAsync(model.Email);
+                if (existingTeacherUser != null)
+                {
+                    return BadRequest(new { message = "User already registered" });
+                }
+
+                var teacherUser = new IdentityUser { UserName = model.Email, Email = model.Email };
+                var createResult = await _userManager.CreateAsync(teacherUser, model.Password);
+
+                if (!createResult.Succeeded)
+                {
+                    return BadRequest(createResult.Errors);
+                }
+
+                var teacherRoleResult = await _userManager.AddToRoleAsync(teacherUser, SystemRoles.Teacher);
+                if (!teacherRoleResult.Succeeded)
+                {
+                    return BadRequest(new { message = teacherRoleResult.Errors });
+                }
+
+                teacher.UserId = teacherUser.Id;
+                teacher.Status = "Active";
+
                 await _context.SaveChangesAsync();
-                return Ok(new { message = "User Registered Successfully!" });
+
+                return Ok(new { message = "Teacher registered and account activated successfully!" });
             }
 
-           
+            var invitation = await _context.RegistrationInvitations
+                .FirstOrDefaultAsync(i => i.Token == model.Token);
 
-            return BadRequest(result.Errors);
+            if (invitation == null)
+            {
+                return BadRequest(new { message = "Invalid registration link" });
+            }
+
+            if (invitation.IsUsed)
+            {
+                return BadRequest(new { message = "Registration link already used" });
+            }
+
+            if (invitation.ExpiresAt < DateTime.UtcNow)
+            {
+                return BadRequest(new { message = "Registration link expired" });
+            }
+
+            // Case-insensitive comparison with invitation recipient email
+            if (!string.Equals(model.Email?.Trim(), invitation.RecipientEmail?.Trim(), StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest(new { message = "Email does not match the invitation email" });
+            }
+
+            var existingUser = await _userManager.FindByEmailAsync(model.Email);
+            if (existingUser != null)
+            {
+                return BadRequest(new { message = "User already registered" });
+            }
+
+            var user = new IdentityUser { UserName = model.Email, Email = model.Email };
+            var result = await _userManager.CreateAsync(user, model.Password);
+
+            if (!result.Succeeded)
+            {
+                return BadRequest(result.Errors);
+            }
+
+            // Assign role from the invitation
+            var roleToAssign = string.IsNullOrWhiteSpace(invitation.Role) ? SystemRoles.Student : invitation.Role;
+            var roleResult = await _userManager.AddToRoleAsync(user, roleToAssign);
+
+            if (!roleResult.Succeeded)
+            {
+                return BadRequest(new { message = roleResult.Errors });
+            }
+
+            // Find existing Student by ProfileId and activate account
+            var student = await _context.Students.FindAsync(invitation.ProfileId);
+            if (student != null)
+            {
+                student.UserId = user.Id;
+                student.Email = model.Email;
+                student.Status = "Active";
+            }
+
+            invitation.IsUsed = true;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "User Registered Successfully!" });
         }
 
 

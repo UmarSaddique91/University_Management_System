@@ -1,5 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
-
+using System.Security.Cryptography;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -7,6 +7,7 @@ using University_Management_System.Constants;
 using University_Management_System.Data;
 using University_Management_System.DTOs;
 using University_Management_System.Models.MainModels;
+using University_Management_System.Services;
 
 namespace University_Management_System.Controllers.StudentManagement
 {
@@ -18,77 +19,120 @@ namespace University_Management_System.Controllers.StudentManagement
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<IdentityUser> _userManager;
+        private readonly EmailService _emailService;
 
-        public StudentController(ApplicationDbContext context,UserManager<IdentityUser> userManager)
+        public StudentController(
+            ApplicationDbContext context,
+            UserManager<IdentityUser> userManager,
+            EmailService emailService)
         {
             _context = context;
             _userManager = userManager;
+            _emailService = emailService;
         }
 
 
         //Post API for User
 
         [HttpPost]
-
-        public async Task <IActionResult> AddStudent([FromBody] AddStudentDTO model)
+        public async Task<IActionResult> AddStudent([FromBody] AddStudentDTO model)
         {
+            if (string.IsNullOrWhiteSpace(model.StudentName))
+            {
+                return BadRequest(new { message = "Student name is required" });
+            }
+
+            if (string.IsNullOrWhiteSpace(model.RollNumber))
+            {
+                return BadRequest(new { message = "Roll number is required" });
+            }
+
+            // Check duplication of RollNumber
+            var existingStudent = await _context.Students.FirstOrDefaultAsync(s => s.RollNumber == model.RollNumber);
+            if (existingStudent != null)
+            {
+                return BadRequest(new { message = "Roll number already exists" });
+            }
+
+            // Check whether Department exists
+            if (model.DepartmentId != null)
+            {
+                var departmentExist = await _context.Departments.AnyAsync(d => d.Id == model.DepartmentId);
+                if (!departmentExist)
+                {
+                    return BadRequest(new { message = "Department not found" });
+                }
+            }
+
+            // Check whether AcademicProgram exists
+            if (model.AcademicProgramId != null)
+            {
+                var programExist = await _context.AcademicPrograms.AnyAsync(p => p.Id == model.AcademicProgramId);
+                if (!programExist)
+                {
+                    return BadRequest(new { message = "Academic program not found" });
+                }
+            }
+
+            // Create initial Student with Inactive status and no Email/UserId
             var student = new Student
             {
-                UserId = model.UserId,
                 StudentName = model.StudentName,
                 RollNumber = model.RollNumber,
                 DepartmentId = model.DepartmentId,
                 AcademicProgramId = model.AcademicProgramId,
                 Semester = model.Semester,
-                Status = model.Status
+                Status = "Inactive",
+                Email = null,
+                UserId = null,
+                CreatedAt = DateTime.UtcNow
             };
 
-            //Check the duplication of Student
-
-            var exisitngStudent = _context.Students.FirstOrDefault(s => s.RollNumber == model.RollNumber);
-
-
-            if (exisitngStudent != null)
-            {
-                return BadRequest(new { message = "Roll number already exists" });
-            }
-
-            //Check whether the Department Exist or not
-
-            if(model.DepartmentId != null)
-            {
-                var departmentExist = _context.Departments.Any(d => d.Id == model.DepartmentId);
-
-                if (!departmentExist)
-                {
-                    return BadRequest(new { message = "Department Not Find" });
-                }
-            }
-
-            //Check User Id whther user is registered or not
-
-            var user = await _userManager.FindByIdAsync(model.UserId);
-                if (user == null)
-                {
-                    return BadRequest(new { message = "User does not registred" });
-                }
-
-            //Check whether it has student Role or not
-
-            var isStudent = await _userManager.IsInRoleAsync(user,SystemRoles.Student);
-
-            if (!isStudent)
-            {
-                return BadRequest(new { message = "User Does not have Student Role" });
-            }
-                        
             _context.Students.Add(student);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
+
+            // Create RegistrationInvitation and send invitation email
+            if (!string.IsNullOrWhiteSpace(model.InvitationEmail))
+            {
+                var token = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
+
+                var invitation = new RegistrationInvitation
+                {
+                    Token = token,
+                    Role = SystemRoles.Student,
+                    ProfileId = student.Id,
+                    RecipientEmail = model.InvitationEmail,
+                    ExpiresAt = DateTime.UtcNow.AddDays(2),
+                    IsUsed = false,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                _context.RegistrationInvitations.Add(invitation);
+                await _context.SaveChangesAsync();
+
+                var registrationLink = $"http://localhost:5173/signUp?token={token}";
+
+                var subject = "University Student Registration Invitation";
+                var body = $@"
+                    <p>Your student account has been created by the university.</p>
+                    <p>Please use the following link to complete your registration:</p>
+                    <p><a href='{registrationLink}'>{registrationLink}</a></p>
+                ";
+
+                try
+                {
+                    await _emailService.SendEmailAsync(model.InvitationEmail, subject, body);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Email sending failed: {ex.Message}");
+                }
+            }
 
             return Ok(new
             {
                 message = "Student Added Successfully",
-                student.Id
+                studentId = student.Id
             });
         }
 
@@ -144,9 +188,9 @@ namespace University_Management_System.Controllers.StudentManagement
         //Update the student Detail
 
         [HttpPut("{id}")]
-        public IActionResult UpdateStudent(int id, [FromBody] AddStudentDTO model)
+        public async Task<IActionResult> UpdateStudent(int id, [FromBody] AddStudentDTO model)
         {
-            var student = _context.Students.FirstOrDefault(s => s.Id == id);
+            var student = await _context.Students.FirstOrDefaultAsync(s => s.Id == id);
 
             if (student == null)
             {
@@ -158,24 +202,21 @@ namespace University_Management_System.Controllers.StudentManagement
             student.DepartmentId = model.DepartmentId;
             student.AcademicProgramId = model.AcademicProgramId;
             student.Semester = model.Semester;
-            student.Status = model.Status;
-
 
             //Check whether the Roll Number given by admin is already assigned to any student or not 
-            var duplicateRollNumber = _context.Students
-    .Any(s => s.RollNumber == model.RollNumber && s.Id != id);
+            var duplicateRollNumber = await _context.Students
+                .AnyAsync(s => s.RollNumber == model.RollNumber && s.Id != id);
 
             if (duplicateRollNumber)
             {
                 return BadRequest(new { message = "Roll number already exists" });
             }
 
-            //Check whether the department Id given byt the user exist in Department table or not?
-
+            //Check whether the department Id given by the user exists in Department table
             if (model.DepartmentId != null)
             {
-                var departmentExists = _context.Departments
-                    .Any(d => d.Id == model.DepartmentId);
+                var departmentExists = await _context.Departments
+                    .AnyAsync(d => d.Id == model.DepartmentId);
 
                 if (!departmentExists)
                 {
@@ -183,10 +224,57 @@ namespace University_Management_System.Controllers.StudentManagement
                 }
             }
 
-            _context.SaveChanges();
+            //Check whether the academic program exists in AcademicProgram table
+            if (model.AcademicProgramId != null)
+            {
+                var programExists = await _context.AcademicPrograms
+                    .AnyAsync(p => p.Id == model.AcademicProgramId);
+
+                if (!programExists)
+                {
+                    return BadRequest(new { message = "Academic program does not exist" });
+                }
+            }
+
+            await _context.SaveChangesAsync();
 
             return Ok(new { message = "Student updated successfully" });
         }
+
+
+        //Update Student Status
+
+        [HttpPatch("{id}/status")]
+        public async Task<IActionResult> UpdateStudentStatus(int id, [FromBody] UpdateStudentStatusDTO model)
+        {
+            if (model == null || string.IsNullOrWhiteSpace(model.Status))
+            {
+                return BadRequest(new { message = "Status is required" });
+            }
+
+            var newStatus = model.Status.Trim();
+            if (newStatus != "Active" && newStatus != "Inactive")
+            {
+                return BadRequest(new { message = "Invalid status. Status must be 'Active' or 'Inactive'" });
+            }
+
+            var student = await _context.Students.FirstOrDefaultAsync(s => s.Id == id);
+            if (student == null)
+            {
+                return NotFound(new { message = "Student not found" });
+            }
+
+            if (newStatus == "Active" && (string.IsNullOrEmpty(student.UserId) || string.IsNullOrEmpty(student.Email)))
+            {
+                return BadRequest(new { message = "Cannot activate student who has not completed registration." });
+            }
+
+            student.Status = newStatus;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = $"Student status updated to {newStatus} successfully", status = newStatus });
+        }
+
 
 
         //Delete Student API

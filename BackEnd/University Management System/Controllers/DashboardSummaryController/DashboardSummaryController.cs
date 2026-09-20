@@ -17,6 +17,9 @@ namespace University_Management_System.Controllers.DashboardSummaryController
             _context = context;
         }
 
+
+        //Get for Cards
+
         [HttpGet("summary")]
 
         public async Task<ActionResult<DashboardSummaryDTO>> GetSummary()
@@ -166,6 +169,40 @@ namespace University_Management_System.Controllers.DashboardSummaryController
 
             return Ok(summary);
             
+        }
+
+
+
+        //Get for Trend
+
+        [HttpGet("trend")]
+
+        public async Task<IActionResult> GetEnrollmendTrend([FromQuery] string period= "6 months")
+        {
+            var now = DateTime.UtcNow;
+
+            var startDate = period switch
+            {
+                "1 Year" => now.AddYears(-1),
+                "6 Months" => now.AddMonths(-6),
+                "3 Months" => now.AddMonths(-3),
+                "1 Month" => now.AddMonths(-1),
+                "1 Week" => now.AddDays(-7),
+
+                //if period does not match with any defined option
+
+                _ => now.AddMonths(-6)
+            };
+
+
+            var enrollmetns = await _context.Enrollments.Where(
+                en => en.Status == "active" &&
+                en.CreatedAt >= startDate &&
+                en.CreatedAt <= now
+                ).CountAsync();
+
+
+            return Ok(period);
         }
     }
 }
