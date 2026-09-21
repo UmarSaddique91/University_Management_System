@@ -40,23 +40,18 @@ const [dashboardData,SetDashboardData]= useState({
 
 useEffect(()=>{
 
-  const fetchDashboardData=async()=>{
+  const fetchDashboardData = async () => {
     try {
-
-      const response= await axios.get(
-        "https://localhost:7272/api/DashboardSummary/summary"
-        
-      )
-
-      
-
-      SetDashboardData(response.data)
-      
+      const token = localStorage.getItem("token");
+      const response = await axios.get(
+        "https://localhost:7272/api/DashboardSummary/summary",
+        token ? { headers: { Authorization: `Bearer ${token}` } } : {}
+      );
+      SetDashboardData(response.data);
     } catch (error) {
-      console.log("Data noe fetched Successfully",error)
-      
+      console.log("Data not fetched Successfully", error);
     }
-  }
+  };
 
   fetchDashboardData();
 

@@ -5,7 +5,7 @@ import { X, Search, ChevronDown, Check } from "lucide-react";
  * Reusable Form Modal Component
  * 
  * Used for generic forms (Students, Teachers, Courses, Departments, etc.)
- * Manages generic form values, initial values, input changes, and searchable dropdown behaviors.
+ * Manages generic form values, initial values, input changes, and searchable single/multi dropdown behaviors.
  */
 const Form = ({
   title = "Form Title",
@@ -15,6 +15,7 @@ const Form = ({
   initialValues = null,
   onClose,
   onSubmit,
+  onFormChange,
   primaryButtonText = "Save Changes",
   cancelButtonText = "Cancel",
 }) => {
@@ -30,18 +31,47 @@ const Form = ({
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
+    const updated = {
+      ...formData,
       [name]: value,
-    }));
+    };
+    setFormData(updated);
+    if (onFormChange) onFormChange(updated);
   };
 
   const handleOptionSelect = (fieldName, optionValue) => {
-    setFormData((prev) => ({
-      ...prev,
+    const updated = {
+      ...formData,
       [fieldName]: optionValue,
-    }));
+    };
+    setFormData(updated);
     setOpenDropdown(null);
+    if (onFormChange) onFormChange(updated);
+
+    const dd = dropdownFields.find((d) => d.name === fieldName);
+    if (dd && dd.onChange) {
+      dd.onChange(optionValue, updated);
+    }
+  };
+
+  const handleMultiOptionToggle = (fieldName, optionValue) => {
+    const currentList = Array.isArray(formData[fieldName]) ? formData[fieldName] : [];
+    const exists = currentList.some((v) => String(v) === String(optionValue));
+    const updatedList = exists
+      ? currentList.filter((v) => String(v) !== String(optionValue))
+      : [...currentList, optionValue];
+
+    const updated = {
+      ...formData,
+      [fieldName]: updatedList,
+    };
+    setFormData(updated);
+    if (onFormChange) onFormChange(updated);
+
+    const dd = dropdownFields.find((d) => d.name === fieldName);
+    if (dd && dd.onChange) {
+      dd.onChange(updatedList, updated);
+    }
   };
 
   const handleSearchChange = (fieldName, value) => {
@@ -65,10 +95,7 @@ const Form = ({
         className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-gray-100 flex flex-col max-h-[90vh] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        
-
-
-        {/* Model Header */}
+        {/* Modal Header */}
         <div className="px-6 py-4 border-b border-gray-100 flex items-start justify-between gap-4">
           <div>
             <h3 className="text-lg font-bold text-gray-900 leading-6">
@@ -89,12 +116,7 @@ const Form = ({
           </button>
         </div>
 
-
-
-
-
-
-{/* MOdel Body  */}
+        {/* Modal Body */}
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
           <div className="px-6 py-5 overflow-y-auto flex-1 space-y-6">
             
@@ -123,7 +145,12 @@ const Form = ({
                         onChange={handleInputChange}
                         placeholder={field.placeholder || ""}
                         required={field.required}
-                        className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors shadow-2xs"
+                        disabled={field.disabled}
+                        className={`w-full px-3.5 py-2.5 border rounded-lg text-sm transition-colors shadow-2xs ${
+                          field.disabled
+                            ? "bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed"
+                            : "bg-white border-gray-200 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                        }`}
                       />
 
                       {field.helperText && (
@@ -143,19 +170,30 @@ const Form = ({
                 {dropdownFields.map((dropdown, index) => {
                   const isFullWidth = dropdown.colSpan === 2 || dropdown.fullWidth;
                   const isOpen = openDropdown === dropdown.name;
-                  const selectedVal = formData[dropdown.name];
+                  const isMulti = !!dropdown.isMulti;
+                  const rawVal = formData[dropdown.name];
 
-                  // Find label of selected option for trigger box display
-                  const selectedOption = (dropdown.options || []).find((opt) => {
-                    const optVal = typeof opt === "object" ? opt.value : opt;
-                    return selectedVal !== undefined && selectedVal !== null && String(optVal) === String(selectedVal);
-                  });
-
-                  const displayLabel = selectedOption
-                    ? typeof selectedOption === "object"
-                      ? selectedOption.label
-                      : selectedOption
-                    : "";
+                  let displayLabel = "";
+                  if (isMulti) {
+                    const selectedArray = Array.isArray(rawVal) ? rawVal : [];
+                    const selectedOptions = (dropdown.options || []).filter((opt) => {
+                      const optVal = typeof opt === "object" ? opt.value : opt;
+                      return selectedArray.some((v) => String(v) === String(optVal));
+                    });
+                    if (selectedOptions.length > 0) {
+                      displayLabel = selectedOptions
+                        .map((o) => (typeof o === "object" ? o.label : o))
+                        .join(", ");
+                    }
+                  } else {
+                    const selectedOption = (dropdown.options || []).find((opt) => {
+                      const optVal = typeof opt === "object" ? opt.value : opt;
+                      return rawVal !== undefined && rawVal !== null && String(optVal) === String(rawVal);
+                    });
+                    if (selectedOption) {
+                      displayLabel = typeof selectedOption === "object" ? selectedOption.label : selectedOption;
+                    }
+                  }
 
                   // Filter options by search query
                   const query = (searchQueries[dropdown.name] || "").toLowerCase();
@@ -178,14 +216,28 @@ const Form = ({
 
                       {/* Dropdown Trigger Box */}
                       <div
-                        onClick={() => setOpenDropdown(isOpen ? null : dropdown.name)}
-                        className="flex items-center justify-between w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 shadow-2xs cursor-pointer hover:border-gray-300 transition-colors"
+                        onClick={() => {
+                          if (!dropdown.disabled) {
+                            setOpenDropdown(isOpen ? null : dropdown.name);
+                          }
+                        }}
+                        className={`flex items-center justify-between w-full px-3.5 py-2.5 border rounded-lg text-sm shadow-2xs min-h-[42px] transition-colors ${
+                          dropdown.disabled
+                            ? "bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed"
+                            : "bg-white border-gray-200 text-gray-700 cursor-pointer hover:border-gray-300"
+                        }`}
                       >
-                        <span className={displayLabel ? "text-gray-900 font-medium" : "text-gray-400"}>
-                          {displayLabel || dropdown.placeholder || "Select option..."}
+                        <span className={`truncate ${displayLabel ? "text-gray-900 font-medium" : "text-gray-400"}`}>
+                          {displayLabel || dropdown.placeholder || (isMulti ? "Select options..." : "Select option...")}
                         </span>
-                        <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+                        <ChevronDown className={`w-4 h-4 text-gray-400 shrink-0 ml-2 transition-transform ${isOpen ? "rotate-180" : ""}`} />
                       </div>
+
+                      {dropdown.helperText && (
+                        <p className="text-xs text-gray-400 mt-1">
+                          {dropdown.helperText}
+                        </p>
+                      )}
 
                       {/* Searchable Options Menu */}
                       {isOpen && (
@@ -204,26 +256,52 @@ const Form = ({
                           </div>
 
                           {/* Options List */}
-                          <ul className="max-h-36 overflow-y-auto py-1 divide-y divide-gray-50">
+                          <ul className="max-h-48 overflow-y-auto py-1 divide-y divide-gray-50">
                             {filteredOptions.length > 0 ? (
                               filteredOptions.map((option, optIdx) => {
                                 const optionLabel = typeof option === "object" ? option.label : option;
                                 const optionValue = typeof option === "object" ? option.value : option;
-                                const isSelected = selectedVal !== undefined && selectedVal !== null && String(selectedVal) === String(optionValue);
+
+                                let isSelected = false;
+                                if (isMulti) {
+                                  const selectedArray = Array.isArray(rawVal) ? rawVal : [];
+                                  isSelected = selectedArray.some((v) => String(v) === String(optionValue));
+                                } else {
+                                  isSelected = rawVal !== undefined && rawVal !== null && String(rawVal) === String(optionValue);
+                                }
 
                                 return (
                                   <li
                                     key={optIdx}
-                                    onClick={() => handleOptionSelect(dropdown.name, optionValue)}
+                                    onClick={() => {
+                                      if (isMulti) {
+                                        handleMultiOptionToggle(dropdown.name, optionValue);
+                                      } else {
+                                        handleOptionSelect(dropdown.name, optionValue);
+                                      }
+                                    }}
                                     className={`px-3.5 py-2 text-xs cursor-pointer flex items-center justify-between transition-colors ${
                                       isSelected
                                         ? "bg-blue-50 text-blue-700 font-medium"
                                         : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
                                     }`}
                                   >
-                                    <span>{optionLabel}</span>
-                                    {isSelected && (
-                                      <Check className="w-3.5 h-3.5 text-blue-600" />
+                                    <div className="flex items-center gap-2 truncate">
+                                      {isMulti && (
+                                        <div
+                                          className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 ${
+                                            isSelected
+                                              ? "bg-blue-600 border-blue-600 text-white"
+                                              : "border-gray-300 bg-white"
+                                          }`}
+                                        >
+                                          {isSelected && <Check className="w-2.5 h-2.5 text-white" />}
+                                        </div>
+                                      )}
+                                      <span className="truncate">{optionLabel}</span>
+                                    </div>
+                                    {!isMulti && isSelected && (
+                                      <Check className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                                     )}
                                   </li>
                                 );
@@ -249,7 +327,7 @@ const Form = ({
             )}
           </div>
 
-          {/* Model Footer  */}
+          {/* Modal Footer */}
           <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/50 flex items-center justify-end gap-3">
             <button
               type="button"

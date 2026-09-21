@@ -56,6 +56,31 @@ const Teachers = () => {
     setShowModal(true);
   };
 
+  const handleDelete = async (row) => {
+    const isConfirmed = window.confirm(`Are you sure you want to delete ${row.name || 'this teacher'}?`);
+    if (!isConfirmed) return;
+
+    try {
+      const token = localStorage.getItem("token");
+
+      await axios.delete(`https://localhost:7272/api/Teacher/${row.dbId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      setTeacher((prev) => {
+        const updated = prev.filter((t) => t.id !== row.dbId);
+        const newTotalPages = Math.max(1, Math.ceil(updated.length / 10));
+        setCurrentPage((curr) => Math.min(curr, newTotalPages));
+        return updated;
+      });
+    } catch (error) {
+      console.log("Teacher Delete Failed", error);
+      alert(error.response?.data?.message || "Failed to delete teacher");
+    }
+  };
+
   const handleCloseModal = () => {
     setShowModal(false);
     setSelectedTeacher(null);
@@ -219,11 +244,20 @@ const Teachers = () => {
       key: 'courses',
       label: 'Assigned Courses',
       align: 'center',
-      render: (courses, row) => (
-        <span className="text-gray-700 font-medium">
-          {row.assignedCoursesCount > 0 ? row.assignedCoursesCount : '-'}
-        </span>
-      ),
+      render: (courses, row) => {
+        const count = row.assignedCoursesCount || 0;
+        return (
+          <span
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+              count > 0
+                ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                : 'bg-gray-100 text-gray-500'
+            }`}
+          >
+            {count}
+          </span>
+        );
+      },
     },
   ];
 
@@ -420,6 +454,7 @@ const Teachers = () => {
           data={filterTeacher}
           showActions={true}
           onEdit={handleEdit}
+          onDelete={handleDelete}
           pagination={true}
           pageSize={10}
           currentPage={currentPage}

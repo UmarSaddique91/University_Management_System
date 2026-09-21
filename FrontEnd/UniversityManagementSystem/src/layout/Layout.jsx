@@ -1,6 +1,6 @@
 import React from 'react'
 import Logo from '../assets/Logo.png'
-import { LayoutDashboard, Users, Folder, FileText, Settings, Search, Bell, LogOut } from 'lucide-react'
+import { LayoutDashboard, Users, Folder, FileText, Settings, Search, Bell, LogOut, GraduationCap, Landmark, BookOpen, ShieldCheck } from 'lucide-react'
 import { useLocation,useNavigate } from 'react-router-dom'
 import { useState, useEffect, useRef } from 'react'
 
@@ -8,6 +8,24 @@ const Layout = ({ children }) => {
     const location = useLocation();
     const navigate=useNavigate();
 
+    // User Role
+    const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                const roleClaim = payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || payload.role;
+                const roles = Array.isArray(roleClaim) ? roleClaim : [roleClaim];
+                if (roles.includes('SuperAdmin')) {
+                    setIsSuperAdmin(true);
+                }
+            } catch (err) {
+                console.log('Error decoding token', err);
+            }
+        }
+    }, []);
 
     //States and Logic For Notofication
 
@@ -106,6 +124,15 @@ const Layout = ({ children }) => {
                             <span className="text-[14px]">Students</span>
                         </a>
 
+                        <a href="/departments"
+                            className={`flex items-center text-white gap-2 py-2 px-2 
+                rounded rounded-md w-full transition-colors 
+                ${location.pathname === '/departments' ? 'bg-blue-500' : 'bg-transparent hover:bg-blue-600'}  `}>
+
+                            <Landmark className="text-white" size={14} />
+                            <span className="text-[14px]">Departments</span>
+                        </a>
+
 
                         <a href="/courses"
                             className={`flex items-center text-white gap-2 py-2 px-2 
@@ -116,26 +143,39 @@ const Layout = ({ children }) => {
                             <span className="text-[14px]">Courses</span>
                         </a>
 
-
-                        <a href="/assignments"
+                        <a href="/academic-programs"
                             className={`flex items-center text-white gap-2 py-2 px-2 
                 rounded rounded-md w-full transition-colors 
-                ${location.pathname === '/assignments' ? 'bg-blue-500' : 'bg-transparent hover:bg-blue-600'}  `}>
+                ${location.pathname === '/academic-programs' || location.pathname === '/academicPrograms' ? 'bg-blue-500' : 'bg-transparent hover:bg-blue-600'}  `}>
 
-                            <FileText className="text-white" size={14} />
-                            <span className="text-[14px]">Assignments</span>
+                            <GraduationCap className="text-white" size={14} />
+                            <span className="text-[14px]">Academic Programs</span>
                         </a>
 
 
-                        <a href="/settings"
+                       
 
+                        <a href="/course-assignments"
                             className={`flex items-center text-white gap-2 py-2 px-2 
                 rounded rounded-md w-full transition-colors 
-                ${location.pathname === '/settings' ? 'bg-blue-500' : 'bg-transparent hover:bg-blue-600'}  `}>
+                ${location.pathname === '/course-assignments' ? 'bg-blue-500' : 'bg-transparent hover:bg-blue-600'}  `}>
 
-                            <Settings className="text-white" size={14} />
-                            <span className="text-[14px]">Settings</span>
+                            <BookOpen className="text-white" size={14} />
+                            <span className="text-[14px]">Course Assignments</span>
                         </a>
+
+                        {isSuperAdmin && (
+                            <a href="/admins"
+                                className={`flex items-center text-white gap-2 py-2 px-2 
+                    rounded rounded-md w-full transition-colors 
+                    ${location.pathname === '/admins' ? 'bg-blue-500' : 'bg-transparent hover:bg-blue-600'}  `}>
+
+                                <ShieldCheck className="text-white" size={14} />
+                                <span className="text-[14px]">Admins</span>
+                            </a>
+                        )}
+
+                        
                     </nav>
                 </div>
             </aside>

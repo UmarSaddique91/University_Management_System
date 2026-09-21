@@ -17,6 +17,11 @@ const DataTable = ({
   pageSize = 10,
   currentPage = 1,
   onPageChange,
+  expandable = false,
+  expandedRowId = null,
+  onRowExpand = null,
+  renderExpandedRow = null,
+  rowKey = 'id',
 }) => {
   const totalItems = data.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
@@ -98,57 +103,80 @@ const DataTable = ({
                 </td>
               </tr>
             ) : (
-              displayData.map((row, rowIdx) => (
-                <tr key={rowIdx} className="hover:bg-slate-50/60 transition-colors">
-                  {columns.map((col, colIdx) => (
-                    <td
-                      key={colIdx}
-                      className={`py-3.5 px-4 text-gray-700 ${
-                        col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left'
+              displayData.map((row, rowIdx) => {
+                const isRowExpanded =
+                  expandable &&
+                  (row[rowKey] !== undefined ? row[rowKey] : (row.dbId ?? row.id)) === expandedRowId;
+
+                return (
+                  <React.Fragment key={row[rowKey] ?? row.dbId ?? row.id ?? rowIdx}>
+                    <tr
+                      className={`hover:bg-slate-50/60 transition-colors ${
+                        isRowExpanded ? 'bg-blue-50/20' : ''
                       }`}
                     >
-                      {col.render ? col.render(row[col.key], row) : row[col.key]}
-                    </td>
-                  ))}
+                      {columns.map((col, colIdx) => (
+                        <td
+                          key={colIdx}
+                          className={`py-3.5 px-4 text-gray-700 ${
+                            col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left'
+                          }`}
+                        >
+                          {col.render ? col.render(row[col.key], row) : row[col.key]}
+                        </td>
+                      ))}
 
-                  {showActions && (
-                    <td className="py-3.5 px-4 text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        {onView && (
-                          <button
-                            type="button"
-                            onClick={() => onView(row)}
-                            title="View"
-                            className="p-1.5 bg-gray-50 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                        )}
-                        {onEdit && (
-                          <button
-                            type="button"
-                            onClick={() => onEdit(row)}
-                            title="Edit"
-                            className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors cursor-pointer"
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </button>
-                        )}
-                        {onDelete && (
-                          <button
-                            type="button"
-                            onClick={() => onDelete(row)}
-                            title="Delete"
-                            className="p-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors cursor-pointer"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  )}
-                </tr>
-              ))
+                      {showActions && (
+                        <td className="py-3.5 px-4 text-center">
+                          <div className="flex items-center justify-center gap-2">
+                            {onView && (
+                              <button
+                                type="button"
+                                onClick={() => onView?.(row)}
+                                title="View"
+                                className="p-1.5 bg-gray-50 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
+                            )}
+                            {onEdit && (
+                              <button
+                                type="button"
+                                onClick={() => onEdit?.(row)}
+                                title="Edit"
+                                className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors cursor-pointer"
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </button>
+                            )}
+                            {onDelete && (
+                              <button
+                                type="button"
+                                onClick={() => onDelete?.(row)}
+                                title="Delete"
+                                className="p-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors cursor-pointer"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+
+                    {isRowExpanded && renderExpandedRow && (
+                      <tr className="bg-slate-50/80 border-b border-gray-200">
+                        <td
+                          colSpan={columns.length + (showActions ? 1 : 0)}
+                          className="p-0 border-t border-blue-100"
+                        >
+                          {renderExpandedRow(row)}
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })
             )}
           </tbody>
         </table>

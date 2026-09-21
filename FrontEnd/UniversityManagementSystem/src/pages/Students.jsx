@@ -2,255 +2,280 @@ import React, { useEffect, useState } from 'react'
 import Layout from '../layout/Layout'
 import FilterBar from '../components/common/FilterBar'
 import axios from 'axios'
-import { AlignVerticalDistributeEnd } from 'lucide-react'
 import DataTable from '../components/common/DataTable'
 import { Plus } from 'lucide-react'
 import Form from '../components/common/Form'
 
-
 const Students = () => {
+  const [department, setDepartment] = useState([])
+  const [selectDepartmet, setSelectDepartment] = useState('')
 
+  const [academicProgram, setAcademicProgram] = useState([])
+  const [selectAcademicProgram, setSelectAcademicProgram] = useState('')
 
+  const [academicSession, setAcademicSession] = useState([])
+  const [selectSession, setSelectSession] = useState('')
 
+  const [semesters, setSemesters] = useState([])
 
+  const [showAddStudentModel, setShowAddStudentModel] = useState(false)
+  const [selectedStudent, setSelectedStudent] = useState(null)
+  const [formState, setFormState] = useState({})
 
+  const [student, setStudent] = useState([])
+  const [searchTerm, setSearchTerm] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
 
-    const [department,setDepartment]= useState([])
-    const [selectDepartmet,setSelectDepartment]= useState('')
+  const handleToggleStatus = async (row) => {
+    if (!row.isRegistered) {
+      alert("Cannot activate student: Registration has not been completed by the student yet.");
+      return;
+    }
 
-    const [academicProgram,setAcademicProgram]= useState([])
-    const [selectAcademicProgram,setSelectAcademicProgram]= useState('')
+    const newStatus = row.status === 'Active' ? 'Inactive' : 'Active';
 
-    const [academicSession, setAcademicSession] = useState([]);
+    try {
+      const token = localStorage.getItem("token");
+      await axios.patch(
+        `https://localhost:7272/api/Student/${row.dbId}/status`,
+        { status: newStatus },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
+      setStudent((prev) =>
+        prev.map((s) => (s.id === row.dbId ? { ...s, status: newStatus } : s))
+      );
+    } catch (error) {
+      console.log("Failed to update student status", error);
+      alert(error.response?.data?.message || "Failed to update student status");
+    }
+  };
 
-    const [showAddStudentModel, setShowAddStudentModel]= useState(false)
-    const [selectedStudent, setSelectedStudent] = useState(null);
+  const handleDelete = async (row) => {
+    const isConfirmed = window.confirm(`Are you sure you want to delete ${row.name || 'this student'}?`);
+    if (!isConfirmed) return;
 
-    const [student,setStudent]=useState([])
-    const [searchTerm, setSearchTerm] = useState('');
-    const [currentPage, setCurrentPage] = useState(1);
+    try {
+      const token = localStorage.getItem("token");
 
-    const handleToggleStatus = async (row) => {
-      if (!row.isRegistered) {
-        alert("Cannot activate student: Registration has not been completed by the student yet.");
-        return;
+      await axios.delete(
+        `https://localhost:7272/api/Student/${row.dbId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+
+      setStudent(prev => {
+        const updated = prev.filter(s => s.id !== row.dbId);
+        const newTotalPages = Math.max(1, Math.ceil(updated.length / 10));
+        setCurrentPage(curr => Math.min(curr, newTotalPages));
+        return updated;
+      });
+
+    } catch (error) {
+      console.log("Student Delete Failed", error);
+      alert(error.response?.data?.message || "Failed to delete student");
+    }
+  };
+
+  const fetchStudents = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+      const [deptRes, progRes, sessRes, semRes, studRes] = await Promise.all([
+        axios.get("https://localhost:7272/api/Department", { headers }),
+        axios.get("https://localhost:7272/api/AcademicProgram", { headers }),
+        axios.get("https://localhost:7272/api/AcademicSession", { headers }),
+        axios.get("https://localhost:7272/api/Semester", { headers }),
+        axios.get("https://localhost:7272/api/Student", { headers }),
+      ]);
+
+      setDepartment(deptRes.data || []);
+      setAcademicProgram(progRes.data || []);
+      setAcademicSession(sessRes.data || []);
+      setSemesters(semRes.data || []);
+      setStudent(studRes.data || []);
+    } catch (error) {
+      console.log("Failed to fetch students data", error);
+    }
+  };
+
+  const handleAddClick = () => {
+    setSelectedStudent(null);
+    const activeSession = academicSession.find((s) => s.isActive);
+    setFormState({
+      studentName: '',
+      rollNumber: '',
+      departmentId: '',
+      academicProgramId: '',
+      academicSessionId: activeSession ? String(activeSession.id) : '',
+      currentSemesterId: '',
+      invitationEmail: '',
+    });
+    setShowAddStudentModel(true);
+  };
+
+  const handleEdit = (row) => {
+    setSelectedStudent(row);
+    setFormState({
+      studentName: row.studentName || '',
+      rollNumber: row.rollNumber || '',
+      departmentId: row.departmentId ? String(row.departmentId) : '',
+      academicProgramId: row.academicProgramId ? String(row.academicProgramId) : '',
+      academicSessionId: row.academicSessionId ? String(row.academicSessionId) : '',
+      currentSemesterId: row.currentSemesterId ? String(row.currentSemesterId) : '',
+      invitationEmail: '',
+    });
+    setShowAddStudentModel(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowAddStudentModel(false);
+    setSelectedStudent(null);
+    setFormState({});
+  };
+
+  const handleFormChange = (updatedData) => {
+    setFormState((prev) => {
+      const next = { ...prev, ...updatedData };
+
+      // If Department changed, clear Program and Semester if they don't match
+      if (updatedData.departmentId !== prev.departmentId) {
+        next.academicProgramId = '';
+        next.currentSemesterId = '';
       }
 
-      const newStatus = row.status === 'Active' ? 'Inactive' : 'Active';
+      // If Program changed, clear Semester
+      if (updatedData.academicProgramId !== prev.academicProgramId) {
+        next.currentSemesterId = '';
+      }
 
-      try {
-        const token = localStorage.getItem("token");
-        await axios.patch(
-          `https://localhost:7272/api/Student/${row.dbId}/status`,
-          { status: newStatus },
+      // If Session changed, clear Semester
+      if (updatedData.academicSessionId !== prev.academicSessionId) {
+        next.currentSemesterId = '';
+      }
+
+      return next;
+    });
+  };
+
+  const handleFormSubmit = async (formData) => {
+    try {
+      const token = localStorage.getItem("token");
+
+      const payload = {
+        studentName: formData.studentName?.trim(),
+        rollNumber: formData.rollNumber?.trim(),
+        departmentId: formData.departmentId ? Number(formData.departmentId) : null,
+        academicProgramId: formData.academicProgramId ? Number(formData.academicProgramId) : null,
+        academicSessionId: formData.academicSessionId ? Number(formData.academicSessionId) : null,
+        currentSemesterId: formData.currentSemesterId ? Number(formData.currentSemesterId) : null,
+        invitationEmail: formData.invitationEmail?.trim() || null,
+      };
+
+      if (selectedStudent) {
+        // Edit Mode: PUT /api/Student/{id}
+        await axios.put(
+          `https://localhost:7272/api/Student/${selectedStudent.dbId}`,
+          payload,
           {
             headers: {
               Authorization: `Bearer ${token}`,
             },
           }
         );
-
-        setStudent((prev) =>
-          prev.map((s) => (s.id === row.dbId ? { ...s, status: newStatus } : s))
-        );
-      } catch (error) {
-        console.log("Failed to update student status", error);
-        alert(error.response?.data?.message || "Failed to update student status");
+      } else {
+        // Create Mode: POST /api/Student
+        await axios.post("https://localhost:7272/api/Student", payload, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
       }
-    };
 
+      handleCloseModal();
+      await fetchStudents();
+    } catch (error) {
+      console.log("Failed to save student", error);
+      alert(error.response?.data?.message || "Failed to save student");
+    }
+  };
 
+  useEffect(() => {
+    fetchStudents();
+  }, []);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectDepartmet, selectAcademicProgram, selectSession]);
 
+  // Dropdown options based on dependencies
+  // 1. Programs based on selected Department
+  const modalPrograms = formState.departmentId
+    ? academicProgram.filter(
+        (p) => String(p.departmentId) === String(formState.departmentId)
+      )
+    : academicProgram;
 
+  // 2. Semesters based on selected Program AND selected Session (Active only)
+  const modalSemesters = semesters.filter((s) => {
+    const matchProg = formState.academicProgramId
+      ? String(s.academicProgramId) === String(formState.academicProgramId)
+      : false;
+    const matchSess = formState.academicSessionId
+      ? String(s.academicSessionId) === String(formState.academicSessionId)
+      : true;
+    const matchStatus = s.status
+      ? s.status === 'Active' || String(s.id) === String(formState.currentSemesterId)
+      : true;
+    return matchProg && matchSess && matchStatus;
+  });
 
-    //handle delete
+  const filterList = [
+    {
+      label: "All Departments",
+      value: selectDepartmet,
+      onChange: (e) => setSelectDepartment(e.target.value),
+      options: [
+        "All Departments",
+        ...department.map((d) => d.departmentName),
+      ],
+    },
+    {
+      label: "All Programs",
+      value: selectAcademicProgram,
+      onChange: (e) => setSelectAcademicProgram(e.target.value),
+      options: [
+        "All Programs",
+        ...academicProgram.map((d) => d.programName),
+      ],
+    },
+    {
+      label: "All Sessions",
+      value: selectSession,
+      onChange: (e) => setSelectSession(e.target.value),
+      options: [
+        "All Sessions",
+        ...academicSession.map((s) => s.sessionName),
+      ],
+    },
+  ];
 
+  const currentDate = new Date().toLocaleDateString('en-GB', {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    year: "numeric"
+  });
 
-    const handleDelete = async (row) => {
-  try {
-    const token = localStorage.getItem("token");
-
-    await axios.delete(
-      `https://localhost:7272/api/Student/${row.dbId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      }
-    );
-
-    setStudent(prev =>
-      prev.filter(s => s.id !== row.dbId)
-    );
-
-  } catch (error) {
-    console.log("Student Delete Failed", error);
-  }
-};
-
-
-    const fetchStudents = async () => {
-      try {
-        const token = localStorage.getItem("token");
-
-        const departmentResponse = await axios.get(
-          "https://localhost:7272/api/Department",
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        setDepartment(departmentResponse.data);
-
-        const academicProgramResponse = await axios.get(
-          "https://localhost:7272/api/AcademicProgram",
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        setAcademicProgram(academicProgramResponse.data);
-
-        const sessionResponse = await axios.get(
-          "https://localhost:7272/api/AcademicSession",
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        setAcademicSession(sessionResponse.data);
-
-        const studentResponse = await axios.get(
-          "https://localhost:7272/api/Student",
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        setStudent(studentResponse.data);
-      } catch (error) {
-        console.log("Failed to fetch students data", error);
-      }
-    };
-
-    const handleEdit = (row) => {
-      setSelectedStudent(row);
-      setShowAddStudentModel(true);
-    };
-
-    const handleAddClick = () => {
-      setSelectedStudent(null);
-      setShowAddStudentModel(true);
-    };
-
-    const handleCloseModal = () => {
-      setShowAddStudentModel(false);
-      setSelectedStudent(null);
-    };
-
-    const handleFormSubmit = async (formData) => {
-      try {
-        const token = localStorage.getItem("token");
-
-        const payload = {
-          studentName: formData.studentName,
-          rollNumber: formData.rollNumber,
-          departmentId: formData.departmentId ? Number(formData.departmentId) : null,
-          academicProgramId: formData.academicProgramId ? Number(formData.academicProgramId) : null,
-          semester: formData.semester ? Number(formData.semester) : null,
-          invitationEmail: formData.invitationEmail,
-        };
-
-        if (selectedStudent) {
-          // Edit Mode: PUT /api/Student/{id}
-          await axios.put(
-            `https://localhost:7272/api/Student/${selectedStudent.dbId}`,
-            payload,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-        } else {
-          // Create Mode: POST /api/Student
-          await axios.post("https://localhost:7272/api/Student", payload, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-        }
-
-        handleCloseModal();
-        await fetchStudents();
-      } catch (error) {
-        console.log("Failed to save student", error);
-        alert(error.response?.data?.message || "Failed to save student");
-      }
-    };
-
-    useEffect(() => {
-      fetchStudents();
-    }, []);
-
-    useEffect(() => {
-      setCurrentPage(1);
-    }, [searchTerm, selectDepartmet, selectAcademicProgram]);
-
-
-
-
-
-    //Filter List form Drop Downs
-
-    const filterList=[
-
-        //For Departmetns
-        {
-            label:"All Departments",
-            value:selectDepartmet,
-            onChange:(e)=>setSelectDepartment(e.target.value),
-
-            options:[
-                "All Departments",
-                ...department.map(d=>d.departmentName)
-            ]
-        },
-
-
-        //For Academic Programs
-
-        {
-            label:"All Programs",
-            value:selectAcademicProgram,
-            onChange:(e)=>setSelectAcademicProgram(e.target.value),
-
-            options:[
-                "All Programs",
-                ...academicProgram.map(d=> d.programName)
-            ]
-        },
-
-
-        //For Academic Session
-
-
-        
-
-
-    ]
-
-
-
-     
-
-    //Current Date
-
-    const currentDate= new Date().toLocaleDateString('en-GB',{
-        weekday:"long",
-        day:"2-digit",
-        month:"long",
-        year:"numeric"
-    })
-
-
-
-
-    //Columns
-
-
-
-     const columns = [
+  const columns = [
     {
       key: 'serial',
       label: '#',
@@ -274,15 +299,24 @@ const Students = () => {
       key: 'email',
       label: 'Email',
     },
-
-      {
+    {
       key: 'program',
       label: 'Program',
       align: 'center',
     },
     {
-        key:'semester',
-        label:'Semester'
+      key: 'semester',
+      label: 'Semester',
+      render: (_, row) => (
+        <div className="text-xs">
+          <span className="font-semibold text-gray-800">
+            {row.semesterNumber ? `Semester ${row.semesterNumber}` : '-'}
+          </span>
+          {row.sessionName && (
+            <span className="text-gray-500 block">{row.sessionName}</span>
+          )}
+        </div>
+      ),
     },
     {
       key: 'status',
@@ -320,16 +354,11 @@ const Students = () => {
         );
       },
     },
-  
   ];
-
-
-
-  // Map students data
 
   const studentsData = student.map((item) => ({
     dbId: item.id,
-    id: item.studentId || '-',
+    id: item.id || '-',
     name: item.studentName || '-',
     studentName: item.studentName || '',
     RollNo: item.rollNumber || '-',
@@ -339,15 +368,14 @@ const Students = () => {
     email: item.email || '-',
     program: item.programName || '-',
     academicProgramId: item.academicProgramId,
-    semester: item.semester ?? '',
+    academicSessionId: item.academicSessionId,
+    sessionName: item.sessionName || '',
+    currentSemesterId: item.currentSemesterId,
+    semesterNumber: item.semesterNumber || item.semester || '',
     status: item.status || 'Inactive',
     userId: item.userId,
     isRegistered: Boolean(item.userId && item.email),
   }));
-
-
-
-  // Filter Students
 
   const filterStudent = studentsData
     .filter((item) => {
@@ -368,13 +396,17 @@ const Students = () => {
         selectAcademicProgram === "All Programs" ||
         item.program === selectAcademicProgram;
 
-      return matchSearch && matchPrograms && matchDepartment;
+      const matchSession =
+        selectSession === '' ||
+        selectSession === "All Sessions" ||
+        item.sessionName === selectSession;
+
+      return matchSearch && matchPrograms && matchDepartment && matchSession;
     })
     .map((item, index) => ({
       ...item,
       serial: index + 1,
     }));
-
 
   const studentInputFields = selectedStudent
     ? [
@@ -392,13 +424,6 @@ const Students = () => {
           placeholder: "Enter Student Roll Number",
           required: true,
         },
-        {
-          name: "semester",
-          label: "Semester",
-          type: "number",
-          placeholder: "Enter Current Semester",
-          required: true,
-        },
       ]
     : [
         {
@@ -413,13 +438,6 @@ const Students = () => {
           label: "Roll Number",
           type: "text",
           placeholder: "Enter Student Roll Number",
-          required: true,
-        },
-        {
-          name: "semester",
-          label: "Semester",
-          type: "number",
-          placeholder: "Enter Current Semester",
           required: true,
         },
         {
@@ -440,101 +458,112 @@ const Students = () => {
       required: true,
       options: department.map((item) => ({
         label: item.departmentName,
-        value: item.id,
+        value: String(item.id),
       })),
     },
     {
       name: "academicProgramId",
       label: "Academic Program",
-      placeholder: "Select Program",
+      placeholder: formState.departmentId ? "Select Program" : "Select Department First",
       searchPlaceholder: "Search Program...",
       required: true,
-      options: academicProgram.map((item) => ({
-        label: item.programName,
-        value: item.id,
+      disabled: !formState.departmentId,
+      options: modalPrograms.map((item) => ({
+        label: `${item.programName}${item.programCode ? ` (${item.programCode})` : ''}`,
+        value: String(item.id),
+      })),
+    },
+    {
+      name: "academicSessionId",
+      label: "Academic Session",
+      placeholder: "Select Session",
+      searchPlaceholder: "Search Session...",
+      required: true,
+      options: academicSession.map((item) => ({
+        label: `${item.sessionName}${item.isActive ? ' (Active)' : ''}`,
+        value: String(item.id),
+      })),
+    },
+    {
+      name: "currentSemesterId",
+      label: "Semester",
+      placeholder: !formState.academicProgramId
+        ? "Select Program First"
+        : (!formState.academicSessionId
+          ? "Select Session First"
+          : (modalSemesters.length === 0 ? "No active semesters found" : "Select Semester")),
+      searchPlaceholder: "Search Semester...",
+      required: true,
+      disabled: !formState.academicProgramId || !formState.academicSessionId || modalSemesters.length === 0,
+      helperText: modalSemesters.length === 0 && formState.academicProgramId && formState.academicSessionId
+        ? "No active semesters configured for this program and session."
+        : undefined,
+      options: modalSemesters.map((item) => ({
+        label: `Semester ${item.semesterNumber}`,
+        value: String(item.id),
       })),
     },
   ];
 
-  const formInitialValues = selectedStudent
-    ? {
-        studentName: selectedStudent.studentName,
-        rollNumber: selectedStudent.rollNumber,
-        semester: selectedStudent.semester,
-        departmentId: selectedStudent.departmentId,
-        academicProgramId: selectedStudent.academicProgramId,
-      }
-    : {};
-
   return (
     <Layout>
-
-
-        {/* page header  */}
-
-
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Students</h1>
-            <p className="text-sm text-gray-500 mt-0.5">
-              Manage studetns records, view details and perform actions.
-            </p>
-          </div>
-          <div className="text-sm font-medium text-gray-600 sm:text-right">
-            {currentDate}
-          </div>
+      {/* page header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Students</h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Manage student records, view details and perform actions.
+          </p>
         </div>
+        <div className="text-sm font-medium text-gray-600 sm:text-right">
+          {currentDate}
+        </div>
+      </div>
 
-
-
-
-        {/* Filters And Search Bar */}
-
-        <FilterBar
+      {/* Filters And Search Bar */}
+      <FilterBar
         searchValue={searchTerm}
-  onSearchChange={(e) => setSearchTerm(e.target.value)}
-  filters={filterList}
-  actionButton={{
-            label: 'Add Students',
-            icon: Plus,
-            onClick: handleAddClick,
-          }}
+        onSearchChange={(e) => setSearchTerm(e.target.value)}
+        filters={filterList}
+        actionButton={{
+          label: 'Add Students',
+          icon: Plus,
+          onClick: handleAddClick,
+        }}
+      />
+
+      <DataTable
+        title="All Students"
+        count={filterStudent.length}
+        columns={columns}
+        data={filterStudent}
+        showActions={true}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        pagination={true}
+        pageSize={10}
+        currentPage={currentPage}
+        onPageChange={setCurrentPage}
+      />
+
+      {showAddStudentModel && (
+        <Form
+          title={selectedStudent ? "Edit Student" : "Add Student"}
+          subtitle={
+            selectedStudent
+              ? "Update student academic details."
+              : "Create student record and send registration invitation email."
+          }
+          primaryButtonText={selectedStudent ? "Save Changes" : "Add Student"}
+          cancelButtonText="Cancel"
+          initialValues={formState}
+          onClose={handleCloseModal}
+          onSubmit={handleFormSubmit}
+          onFormChange={handleFormChange}
+          inputFields={studentInputFields}
+          dropdownFields={studentDropdownFields}
         />
-
-
-
-        <DataTable
-          title="All Students"
-          count={filterStudent.length}
-          columns={columns}
-          data={filterStudent}
-          showActions={true}
-          onEdit={handleEdit}
-          pagination={true}
-          pageSize={10}
-          currentPage={currentPage}
-          onPageChange={setCurrentPage}
-        />
-
-
-{showAddStudentModel && (
-  <Form
-    title={selectedStudent ? "Edit Student" : "Add Student"}
-    subtitle={
-      selectedStudent
-        ? "Update student academic details."
-        : "Create student record and send registration invitation email."
-    }
-    primaryButtonText={selectedStudent ? "Save Changes" : "Add Student"}
-    cancelButtonText="Cancel"
-    initialValues={formInitialValues}
-    onClose={handleCloseModal}
-    onSubmit={handleFormSubmit}
-    inputFields={studentInputFields}
-    dropdownFields={studentDropdownFields}
-  />
-)}
-
+      )}
     </Layout>
   )
 }
