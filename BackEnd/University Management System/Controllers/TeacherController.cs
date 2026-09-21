@@ -128,7 +128,11 @@ namespace University_Management_System.Controllers
                 DepartmentName = t.Department != null ? t.Department.DepartmentName : null,
                 Specialization = t.Specialization,
                 Status = t.Status,
-                AssignedCoursesCount = _context.CourseOfferings.Count(co => co.TeacherId == t.Id)
+                AssignedCoursesCount = _context.CourseOfferings
+                    .Where(co => co.TeacherId == t.Id && co.Status == "Active")
+                    .Select(co => co.CourseId)
+                    .Distinct()
+                    .Count()
             }).ToListAsync();
 
             return Ok(result);

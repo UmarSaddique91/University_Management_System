@@ -1,4 +1,4 @@
-﻿namespace University_Management_System.Models.MainModels
+namespace University_Management_System.Models.MainModels
 {
     public class CourseOffering
     {
@@ -15,5 +15,7 @@
         // In which semester the course is offered
         public int SemesterId { get; set; }
         public Semester Semester { get; set; }
+
+        public string Status { get; set; } = "Active";
     }
 }

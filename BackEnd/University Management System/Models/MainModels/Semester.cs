@@ -1,4 +1,4 @@
-﻿namespace University_Management_System.Models.MainModels
+namespace University_Management_System.Models.MainModels
 {
     public class Semester
     {
@@ -13,5 +13,7 @@
         // Foreign key of Academinc Session
         public int AcademicSessionId { get; set; }
         public AcademicSession AcademicSession { get; set; }
+
+        public string Status { get; set; } = "Active";
     }
 }

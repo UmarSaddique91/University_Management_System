@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using University_Management_System.Models.MainModels;
 using Microsoft.AspNetCore.Identity;
@@ -38,9 +38,35 @@ namespace University_Management_System.Data
 
         public DbSet<Grade> Grades { get; set; }
 
+        public DbSet<AcademicProgramCourse> AcademicProgramCourses { get; set; }
 
-        
+        public DbSet<AdminProfile> AdminProfiles { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            base.OnModelCreating(builder);
+
+            builder.Entity<CourseOffering>()
+                .Property(co => co.Status)
+                .HasDefaultValue("Active");
+
+            builder.Entity<Semester>()
+                .Property(s => s.Status)
+                .HasDefaultValue("Active");
+
+            builder.Entity<Student>()
+                .HasOne(s => s.CurrentSemester)
+                .WithMany()
+                .HasForeignKey(s => s.CurrentSemesterId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Enrollment>()
+                .HasIndex(e => new { e.StudentId, e.CourseOfferingId })
+                .IsUnique();
+
+            builder.Entity<Enrollment>()
+                .Property(e => e.Status)
+                .HasDefaultValue("Active");
+        }
     }
-    
-    
 }

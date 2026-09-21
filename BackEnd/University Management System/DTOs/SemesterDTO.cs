@@ -1,4 +1,4 @@
-﻿namespace University_Management_System.DTOs
+namespace University_Management_System.DTOs
 {
     public class SemesterDTO
     {
@@ -7,5 +7,6 @@
         public int AcademicProgramId { get; set; }
 
         public int AcademicSessionId { get; set; }
+        public string? Status { get; set; } = "Active";
     }
 }

@@ -49,9 +49,23 @@ namespace University_Management_System.Controllers
                 //Get Assigned role of User
 
                 var userRoles = await _userManager.GetRolesAsync(user);
+
+                // If user is Admin, verify AdminProfile is Active
+                if (userRoles.Contains(SystemRoles.Admin))
+                {
+                    var adminProfile = await _context.AdminProfiles
+                        .FirstOrDefaultAsync(a => a.UserId == user.Id || (a.Email != null && a.Email.ToLower() == user.Email.ToLower()));
+
+                    if (adminProfile != null && !adminProfile.Status.Equals("Active", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return Unauthorized(new { message = "Your admin account is inactive. Please contact the Super Administrator." });
+                    }
+                }
+
                 var authClaims = new List<Claim>
                 {
-                    new Claim(ClaimTypes.Name,user.UserName),
+                    new Claim(ClaimTypes.NameIdentifier, user.Id),
+                    new Claim(ClaimTypes.Name, user.UserName),
                     new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
                 };
 
@@ -75,6 +89,7 @@ namespace University_Management_System.Controllers
                 {
                     token = new JwtSecurityTokenHandler().WriteToken(token),
                     expiration = token.ValidTo,
+                    roles = userRoles,
                     message="Login Successfull"
 
                 });
@@ -101,40 +116,73 @@ namespace University_Management_System.Controllers
 
                 var normalizedEmail = model.Email.Trim().ToLower();
 
+                // 1. Check if pending Admin account exists
+                var pendingAdmin = await _context.AdminProfiles
+                    .FirstOrDefaultAsync(a => a.Email != null && a.Email.ToLower() == normalizedEmail && a.UserId == null);
+
+                if (pendingAdmin != null)
+                {
+                    var existingAdminUser = await _userManager.FindByEmailAsync(model.Email);
+                    if (existingAdminUser != null)
+                    {
+                        return BadRequest(new { message = "User already registered" });
+                    }
+
+                    var adminUser = new IdentityUser { UserName = model.Email, Email = model.Email };
+                    var createResult = await _userManager.CreateAsync(adminUser, model.Password);
+                    if (!createResult.Succeeded)
+                    {
+                        return BadRequest(createResult.Errors);
+                    }
+
+                    var adminRoleResult = await _userManager.AddToRoleAsync(adminUser, SystemRoles.Admin);
+                    if (!adminRoleResult.Succeeded)
+                    {
+                        return BadRequest(new { message = adminRoleResult.Errors });
+                    }
+
+                    pendingAdmin.UserId = adminUser.Id;
+                    pendingAdmin.Status = "Active";
+                    await _context.SaveChangesAsync();
+
+                    return Ok(new { message = "Administrator registered and account activated successfully!" });
+                }
+
+                // 2. Check if pending Teacher account exists
                 var teacher = await _context.Teachers
                     .FirstOrDefaultAsync(t => t.Email != null && t.Email.ToLower() == normalizedEmail && t.UserId == null && t.Status == "Inactive");
 
-                if (teacher == null)
+                if (teacher != null)
                 {
-                    return BadRequest(new { message = "No pending teacher account found for this email. Please contact the administrator." });
+                    var existingTeacherUser = await _userManager.FindByEmailAsync(model.Email);
+                    if (existingTeacherUser != null)
+                    {
+                        return BadRequest(new { message = "User already registered" });
+                    }
+
+                    var teacherUser = new IdentityUser { UserName = model.Email, Email = model.Email };
+                    var createResult = await _userManager.CreateAsync(teacherUser, model.Password);
+
+                    if (!createResult.Succeeded)
+                    {
+                        return BadRequest(createResult.Errors);
+                    }
+
+                    var teacherRoleResult = await _userManager.AddToRoleAsync(teacherUser, SystemRoles.Teacher);
+                    if (!teacherRoleResult.Succeeded)
+                    {
+                        return BadRequest(new { message = teacherRoleResult.Errors });
+                    }
+
+                    teacher.UserId = teacherUser.Id;
+                    teacher.Status = "Active";
+
+                    await _context.SaveChangesAsync();
+
+                    return Ok(new { message = "Teacher registered and account activated successfully!" });
                 }
 
-                var existingTeacherUser = await _userManager.FindByEmailAsync(model.Email);
-                if (existingTeacherUser != null)
-                {
-                    return BadRequest(new { message = "User already registered" });
-                }
-
-                var teacherUser = new IdentityUser { UserName = model.Email, Email = model.Email };
-                var createResult = await _userManager.CreateAsync(teacherUser, model.Password);
-
-                if (!createResult.Succeeded)
-                {
-                    return BadRequest(createResult.Errors);
-                }
-
-                var teacherRoleResult = await _userManager.AddToRoleAsync(teacherUser, SystemRoles.Teacher);
-                if (!teacherRoleResult.Succeeded)
-                {
-                    return BadRequest(new { message = teacherRoleResult.Errors });
-                }
-
-                teacher.UserId = teacherUser.Id;
-                teacher.Status = "Active";
-
-                await _context.SaveChangesAsync();
-
-                return Ok(new { message = "Teacher registered and account activated successfully!" });
+                return BadRequest(new { message = "No pending Administrator or Teacher account found for this email. Please contact the administrator." });
             }
 
             var invitation = await _context.RegistrationInvitations

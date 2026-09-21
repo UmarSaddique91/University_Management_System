@@ -47,7 +47,37 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey= new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes(builder.Configuration["JWT:Key"])
             )
+    };
 
+    options.Events = new JwtBearerEvents
+    {
+        OnTokenValidated = async context =>
+        {
+            var userManager = context.HttpContext.RequestServices.GetRequiredService<UserManager<IdentityUser>>();
+            var dbContext = context.HttpContext.RequestServices.GetRequiredService<ApplicationDbContext>();
+
+            var userId = context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var userName = context.Principal?.Identity?.Name;
+
+            var user = !string.IsNullOrEmpty(userId)
+                ? await userManager.FindByIdAsync(userId)
+                : (!string.IsNullOrEmpty(userName) ? await userManager.FindByNameAsync(userName) : null);
+
+            if (user != null)
+            {
+                var roles = await userManager.GetRolesAsync(user);
+                if (roles.Contains(University_Management_System.Constants.SystemRoles.Admin))
+                {
+                    var adminProfile = await dbContext.AdminProfiles
+                        .FirstOrDefaultAsync(a => a.UserId == user.Id || (a.Email != null && a.Email.ToLower() == user.Email.ToLower()));
+
+                    if (adminProfile != null && !adminProfile.Status.Equals("Active", StringComparison.OrdinalIgnoreCase))
+                    {
+                        context.Fail("Admin account has been deactivated.");
+                    }
+                }
+            }
+        }
     };
 });
 
@@ -78,8 +108,11 @@ using (var scope= app.Services.CreateScope())
     var userManager = scope.ServiceProvider
         .GetRequiredService<UserManager<IdentityUser>>();
 
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
     await RoleSeeder.SeedRolesAsync(roleManager);
     await SuperAdminSeeder.SuperAdminSeederAsync(userManager,app.Configuration);
+    await AcademicDataSeeder.SeedAcademicDataAsync(dbContext);
 }
 
 // Configure the HTTP request pipeline.

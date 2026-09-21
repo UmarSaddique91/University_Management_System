@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using University_Management_System.Data;
@@ -104,18 +104,18 @@ namespace University_Management_System.Controllers.DashboardSummaryController
             //Enrollment Last month and percentage Logic
 
             var enrollmentThisMonth = await _context.Enrollments.CountAsync(
-                en=> en.CreatedAt >= startOfMonth&&
-                en.CreatedAt< startOfNextMonth&&
-                en.Status=="active"
+                en => en.CreatedAt >= startOfMonth &&
+                en.CreatedAt < startOfNextMonth &&
+                en.Status != null && (en.Status.ToLower() == "active" || en.Status.ToLower() == "enrolled") &&
+                en.CourseOffering != null && en.CourseOffering.Status == "Active"
                 );
 
             var enrollmentLastMonth = await _context.Enrollments.CountAsync(
                 en => en.CreatedAt >= startOfPreviousMonth &&
                 en.CreatedAt < startOfMonth &&
-                en.Status == "active"
+                en.Status != null && (en.Status.ToLower() == "active" || en.Status.ToLower() == "enrolled") &&
+                en.CourseOffering != null && en.CourseOffering.Status == "Active"
                 );
-
-
 
             //Active Enrollment Percentage Logic
 
@@ -123,11 +123,13 @@ namespace University_Management_System.Controllers.DashboardSummaryController
 
             if (enrollmentLastMonth > 0)
             {
-                enrollmentGrowthPercentage = ((double)(enrollmentThisMonth - enrollmentLastMonth) /
-
-                    enrollmentLastMonth) * 100;
+                enrollmentGrowthPercentage = Math.Round(((double)(enrollmentThisMonth - enrollmentLastMonth) /
+                    enrollmentLastMonth) * 100, 1);
             }
-
+            else if (enrollmentThisMonth > 0)
+            {
+                enrollmentGrowthPercentage = 100.0;
+            }
 
             var summary = new DashboardSummaryDTO
             {
@@ -136,35 +138,23 @@ namespace University_Management_System.Controllers.DashboardSummaryController
                 TotalCourses = await _context.Courses.CountAsync(),
                 TotalDepartments = await _context.Departments.CountAsync(),
 
+                // Only select the enrollments that are active/enrolled AND belonging to an Active CourseOffering
+                ActiveEnrollments = await _context.Enrollments.CountAsync(en =>
+                    en.Status != null && (en.Status.ToLower() == "active" || en.Status.ToLower() == "enrolled") &&
+                    en.CourseOffering != null && en.CourseOffering.Status == "Active"
+                ),
 
+                //Students Logic
+                StudentThisMonth = StudentOfCurrentMonth,
+                StudentGrowthPercentage = Math.Round(studentGrowthPercentage, 1),
 
-                //Only select the enrollments that are active
-
-                ActiveEnrollments = await _context.Enrollments.CountAsync(en => en.Status == "active"),
-
-                
-                //Stuents Logic
-
-               StudentThisMonth = StudentOfCurrentMonth,
-                StudentGrowthPercentage = studentGrowthPercentage,
-
-
-                //TeacherLogic
-
-                TeacherThisMonth= TeacherOfThisMonth,
-                TeacherGrowthPercentage= teacherGrowthPercentage,
-
+                //Teacher Logic
+                TeacherThisMonth = TeacherOfThisMonth,
+                TeacherGrowthPercentage = Math.Round(teacherGrowthPercentage, 1),
 
                 //Enrollment Logic
-
-
-                EnrollmentThisMonth=enrollmentThisMonth,
+                EnrollmentThisMonth = enrollmentThisMonth,
                 EnrollmentGrowthPercentage = enrollmentGrowthPercentage
-
-
-
-
-
             };
 
             return Ok(summary);
@@ -196,7 +186,8 @@ namespace University_Management_System.Controllers.DashboardSummaryController
 
 
             var enrollmetns = await _context.Enrollments.Where(
-                en => en.Status == "active" &&
+                en => en.Status != null && (en.Status.ToLower() == "active" || en.Status.ToLower() == "enrolled") &&
+                en.CourseOffering != null && en.CourseOffering.Status == "Active" &&
                 en.CreatedAt >= startDate &&
                 en.CreatedAt <= now
                 ).CountAsync();

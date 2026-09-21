@@ -1,4 +1,4 @@
-﻿namespace University_Management_System.Models.MainModels
+namespace University_Management_System.Models.MainModels
 {
     public class Student
     {
@@ -19,6 +19,10 @@
         public int? AcademicProgramId { get; set; }
 
         public AcademicProgram? AcademicProgram { get; set; }
+
+        public int? CurrentSemesterId { get; set; }
+
+        public Semester? CurrentSemester { get; set; }
 
         public int? Semester { get; set; }
 
