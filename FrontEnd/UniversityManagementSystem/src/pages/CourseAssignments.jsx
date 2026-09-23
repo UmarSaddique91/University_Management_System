@@ -93,10 +93,11 @@ const CourseAssignments = () => {
 
   const handleAddClick = () => {
     setSelectedOffering(null);
+    const activeSession = academicSessions.find((s) => s.isActive);
     setFormState({
       departmentId: '',
       academicProgramId: '',
-      academicSessionId: '',
+      academicSessionId: activeSession ? String(activeSession.id) : '',
       semesterId: '',
       courseId: '',
       teacherId: '',
@@ -256,7 +257,9 @@ const CourseAssignments = () => {
       onChange: (e) => setSelectSession(e.target.value),
       options: [
         'All Sessions',
-        ...academicSessions.map((s) => s.sessionName),
+        ...academicSessions
+          .filter((s) => !s.sessionName?.startsWith('TestSession_'))
+          .map((s) => s.sessionName),
       ],
     },
     {
@@ -424,21 +427,19 @@ const CourseAssignments = () => {
     ? academicPrograms.filter(
         (p) => String(p.departmentId) === String(formState.departmentId)
       )
-    : academicPrograms;
+    : [];
 
   // 2. Semesters based on selected Program AND selected Session (Active only)
-  const modalSemesters = semesters.filter((s) => {
-    const matchProg = formState.academicProgramId
-      ? String(s.academicProgramId) === String(formState.academicProgramId)
-      : true;
-    const matchSess = formState.academicSessionId
-      ? String(s.academicSessionId) === String(formState.academicSessionId)
-      : true;
-    const matchStatus = s.status
-      ? s.status === 'Active' || String(s.id) === String(formState.semesterId)
-      : true;
-    return matchProg && matchSess && matchStatus;
-  });
+  const modalSemesters = (formState.academicProgramId && formState.academicSessionId)
+    ? semesters.filter((s) => {
+        const matchProg = String(s.academicProgramId) === String(formState.academicProgramId);
+        const matchSess = String(s.academicSessionId) === String(formState.academicSessionId);
+        const matchStatus = s.status
+          ? s.status === 'Active' || String(s.id) === String(formState.semesterId)
+          : true;
+        return matchProg && matchSess && matchStatus;
+      })
+    : [];
 
   // 3. Courses mapped to selected Academic Program
   const modalCourses = formState.academicProgramId
@@ -447,99 +448,110 @@ const CourseAssignments = () => {
           (ap) => String(ap.id) === String(formState.academicProgramId)
         )
       )
-    : courses;
+    : [];
 
   // 4. Teachers belonging to selected Department (Active only)
-  const modalTeachers = teachers.filter((t) => {
-    const active = t.status === 'Active';
-    const deptMatch = formState.departmentId
-      ? String(t.departmentId) === String(formState.departmentId)
-      : true;
-    return active && deptMatch;
-  });
+  const modalTeachers = formState.departmentId
+    ? teachers.filter((t) => {
+        const active = t.status === 'Active';
+        const deptMatch = String(t.departmentId) === String(formState.departmentId);
+        return active && deptMatch;
+      })
+    : [];
 
   const dropdownFields = [
     {
       name: 'departmentId',
       label: 'Department',
+      placeholder: 'Select Department',
+      searchPlaceholder: 'Search Department...',
       required: true,
       colSpan: 1,
-      options: [
-        { label: 'Select Department', value: '' },
-        ...departments.map((d) => ({
-          label: d.departmentName,
-          value: String(d.id),
-        })),
-      ],
+      options: departments.map((d) => ({
+        label: d.departmentName,
+        value: String(d.id),
+      })),
     },
     {
       name: 'academicProgramId',
       label: 'Academic Program',
+      placeholder: !formState.departmentId
+        ? 'Select Department First'
+        : (modalPrograms.length === 0 ? 'No programs in department' : 'Select Academic Program'),
+      searchPlaceholder: 'Search Program...',
       required: true,
       colSpan: 1,
-      options: [
-        { label: 'Select Academic Program', value: '' },
-        ...modalPrograms.map((p) => ({
-          label: `${p.programName} (${p.programCode || ''})`,
-          value: String(p.id),
-        })),
-      ],
+      disabled: !formState.departmentId || modalPrograms.length === 0,
+      options: modalPrograms.map((p) => ({
+        label: `${p.programName} (${p.programCode || ''})`,
+        value: String(p.id),
+      })),
     },
     {
       name: 'academicSessionId',
       label: 'Academic Session',
+      placeholder: 'Select Academic Session',
+      searchPlaceholder: 'Search Session...',
       required: true,
       colSpan: 1,
-      options: [
-        { label: 'Select Academic Session', value: '' },
-        ...academicSessions.map((s) => ({
-          label: s.sessionName,
+      options: academicSessions
+        .filter((s) => !s.sessionName?.startsWith('TestSession_') && (s.isActive || String(s.id) === String(formState.academicSessionId)))
+        .map((s) => ({
+          label: `${s.sessionName}${s.isActive ? ' (Active)' : ''}`,
           value: String(s.id),
         })),
-      ],
     },
     {
       name: 'semesterId',
       label: 'Semester',
+      placeholder: !formState.academicProgramId
+        ? 'Select Program First'
+        : (!formState.academicSessionId
+          ? 'Select Session First'
+          : (modalSemesters.length === 0 ? 'No active semesters found' : 'Select Semester')),
+      searchPlaceholder: 'Search Semester...',
       required: true,
       colSpan: 1,
-      options: [
-        { label: 'Select Semester', value: '' },
-        ...modalSemesters.map((s) => ({
-          label: `Semester ${s.semesterNumber} - ${s.programName || ''} (${s.sessionName || ''})`,
-          value: String(s.id),
-        })),
-      ],
+      disabled: !formState.academicProgramId || !formState.academicSessionId || modalSemesters.length === 0,
+      options: modalSemesters.map((s) => ({
+        label: `Semester ${s.semesterNumber} - ${s.programName || ''} (${s.sessionName || ''})`,
+        value: String(s.id),
+      })),
     },
     {
       name: 'courseId',
       label: 'Course',
+      placeholder: !formState.academicProgramId
+        ? 'Select Program First'
+        : (modalCourses.length === 0 ? 'No courses mapped to program' : 'Select Course'),
+      searchPlaceholder: 'Search Course...',
       required: true,
       colSpan: 1,
-      options: [
-        { label: 'Select Course', value: '' },
-        ...modalCourses.map((c) => ({
-          label: `${c.courseCode} - ${c.courseName}`,
-          value: String(c.id),
-        })),
-      ],
+      disabled: !formState.academicProgramId || modalCourses.length === 0,
+      options: modalCourses.map((c) => ({
+        label: `${c.courseCode} - ${c.courseName}`,
+        value: String(c.id),
+      })),
     },
     {
       name: 'teacherId',
       label: 'Assigned Teacher',
+      placeholder: !formState.departmentId
+        ? 'Select Department First'
+        : (modalTeachers.length === 0 ? 'No active teachers in department' : 'Select Teacher'),
+      searchPlaceholder: 'Search Teacher...',
       required: true,
       colSpan: 1,
-      options: [
-        { label: 'Select Teacher', value: '' },
-        ...modalTeachers.map((t) => ({
-          label: `${t.teacherName} (${t.departmentName || 'Dept'})`,
-          value: String(t.id),
-        })),
-      ],
+      disabled: !formState.departmentId || modalTeachers.length === 0,
+      options: modalTeachers.map((t) => ({
+        label: `${t.teacherName} (${t.departmentName || 'Dept'})`,
+        value: String(t.id),
+      })),
     },
     {
       name: 'status',
       label: 'Status',
+      placeholder: 'Select Status',
       required: true,
       colSpan: 2,
       options: [

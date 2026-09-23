@@ -24,6 +24,7 @@ const Login = () => {
       )
 
       localStorage.setItem("token",response.data.token)
+      localStorage.setItem("roles",JSON.stringify(response.data.roles))
 
        navigate('/dashboard')
       

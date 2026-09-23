@@ -11,25 +11,94 @@ import Departments from './pages/Departments'
 import Courses from './pages/Courses'
 import CourseAssignments from './pages/CourseAssignments'
 import Admins from './pages/Admins'
+import ProtectedRoute from './components/common/ProtectedRoute'
 
 import { Routes, Route } from 'react-router-dom'
 
 const App = () => {
   return (
     <Routes>
-      <Route path="/" element={<Login/>}/>
-      <Route path="/dashboard" element={<DashBoard/>} />
-      <Route path='/forgotPassword' element={<ForgotPassword/>}/>
-      <Route path='/resetPassword' element={<ResetPassword/>}/>
-      <Route path='/signUp' element={<SignUp/>}/>
-      <Route path='/teachers' element={<Teachers/>}/>
-      <Route path='/students' element={<Students/>} />
-      <Route path='/academic-programs' element={<AcademicPrograms/>}/>
-      <Route path='/academicPrograms' element={<AcademicPrograms/>}/>
-      <Route path='/departments' element={<Departments/>} />
-      <Route path='/courses' element={<Courses/>} />
-      <Route path='/course-assignments' element={<CourseAssignments/>} />
-      <Route path='/admins' element={<Admins/>} />
+      {/* Public Authentication Routes */}
+      <Route path="/" element={<Login />} />
+      <Route path="/forgotPassword" element={<ForgotPassword />} />
+      <Route path="/resetPassword" element={<ResetPassword />} />
+      <Route path="/signUp" element={<SignUp />} />
+
+      {/* Protected Routes (Admin & SuperAdmin) */}
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute allowedRoles={["Admin", "SuperAdmin"]}>
+            <DashBoard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teachers"
+        element={
+          <ProtectedRoute allowedRoles={["Admin", "SuperAdmin"]}>
+            <Teachers />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/students"
+        element={
+          <ProtectedRoute allowedRoles={["Admin", "SuperAdmin"]}>
+            <Students />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/academic-programs"
+        element={
+          <ProtectedRoute allowedRoles={["Admin", "SuperAdmin"]}>
+            <AcademicPrograms />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/academicPrograms"
+        element={
+          <ProtectedRoute allowedRoles={["Admin", "SuperAdmin"]}>
+            <AcademicPrograms />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/departments"
+        element={
+          <ProtectedRoute allowedRoles={["Admin", "SuperAdmin"]}>
+            <Departments />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/courses"
+        element={
+          <ProtectedRoute allowedRoles={["Admin", "SuperAdmin"]}>
+            <Courses />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/course-assignments"
+        element={
+          <ProtectedRoute allowedRoles={["Admin", "SuperAdmin"]}>
+            <CourseAssignments />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* SuperAdmin Only Route */}
+      <Route
+        path="/admins"
+        element={
+          <ProtectedRoute allowedRoles={["SuperAdmin"]}>
+            <Admins />
+          </ProtectedRoute>
+        }
+      />
     </Routes>
   )
 }

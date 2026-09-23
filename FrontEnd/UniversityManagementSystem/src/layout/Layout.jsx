@@ -1,31 +1,22 @@
 import React from 'react'
 import Logo from '../assets/Logo.png'
 import { LayoutDashboard, Users, Folder, FileText, Settings, Search, Bell, LogOut, GraduationCap, Landmark, BookOpen, ShieldCheck } from 'lucide-react'
-import { useLocation,useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, NavLink } from 'react-router-dom'
 import { useState, useEffect, useRef } from 'react'
 
 const Layout = ({ children }) => {
     const location = useLocation();
-    const navigate=useNavigate();
+    const navigate = useNavigate();
 
-    // User Role
-    const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+    // Checking roles
+    const roles= JSON.parse(localStorage.getItem("roles") || "[]")
 
-    useEffect(() => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            try {
-                const payload = JSON.parse(atob(token.split('.')[1]));
-                const roleClaim = payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || payload.role;
-                const roles = Array.isArray(roleClaim) ? roleClaim : [roleClaim];
-                if (roles.includes('SuperAdmin')) {
-                    setIsSuperAdmin(true);
-                }
-            } catch (err) {
-                console.log('Error decoding token', err);
-            }
-        }
-    }, []);
+    const hasAdminAccess = roles.includes("Admin") || roles.includes("SuperAdmin");
+    const isSuperAdmin =  roles.includes("SuperAdmin");
+
+
+
+
 
     //States and Logic For Notofication
 
@@ -42,6 +33,10 @@ const Layout = ({ children }) => {
             timeStamp: "04/09/2026, 1:22pm"
         }
     ])
+
+
+
+
 
 
     // States for Profile
@@ -77,10 +72,11 @@ const Layout = ({ children }) => {
 
     
         // Logout Handler 
-
-        const handleLogout=(e)=>{
+        const handleLogout = () => {
+            localStorage.removeItem("token");
+            localStorage.removeItem("roles");
             navigate("/");
-        }
+        };
     return (
 
         <div className="h-screen bg-slate-200 flex overflow-hidden">
@@ -95,88 +91,111 @@ const Layout = ({ children }) => {
 
                     {/* Navigation */}
 
-                    <nav className="flex flex-col flex-1 space-y-1 mt-6">
 
-                        <a href="/dashboard"
-                            className={`flex items-center text-white gap-2 py-2 px-2 
-                rounded rounded-md w-full transition-colors 
-                ${location.pathname === '/dashboard' ? 'bg-blue-500' : 'bg-transparent hover:bg-blue-600'}  `}>
+                    {hasAdminAccess &&(
 
-                            <LayoutDashboard className="text-white" size={14}/>
-                            <span className="text-[14px]">Dashboard</span>
-                        </a>
+                        <nav className="flex flex-col flex-1 space-y-1 mt-6">
+                            <NavLink
+                                to="/dashboard"
+                                className={({ isActive }) =>
+                                    `flex items-center text-white gap-2 py-2 px-2 rounded rounded-md w-full transition-colors ${
+                                        isActive ? 'bg-blue-500' : 'bg-transparent hover:bg-blue-600'
+                                    }`
+                                }
+                            >
+                                <LayoutDashboard className="text-white" size={14}/>
+                                <span className="text-[14px]">Dashboard</span>
+                            </NavLink>
 
-                        <a href="/teachers"
-                            className={`flex items-center text-white gap-2 py-2 px-2 
-                rounded rounded-md w-full transition-colors 
-                ${location.pathname === '/teachers' ? 'bg-blue-500' : 'bg-transparent hover:bg-blue-600'}  `}>
+                            <NavLink
+                                to="/teachers"
+                                className={({ isActive }) =>
+                                    `flex items-center text-white gap-2 py-2 px-2 rounded rounded-md w-full transition-colors ${
+                                        isActive ? 'bg-blue-500' : 'bg-transparent hover:bg-blue-600'
+                                    }`
+                                }
+                            >
+                                <Users className="text-white" size={14} />
+                                <span className="text-[14px]">Teachers</span>
+                            </NavLink>
 
-                            <Users className="text-white" size={14} />
-                            <span className="text-[14px]">Teachers</span>
-                        </a>
+                            <NavLink
+                                to="/students"
+                                className={({ isActive }) =>
+                                    `flex items-center text-white gap-2 py-2 px-2 rounded rounded-md w-full transition-colors ${
+                                        isActive ? 'bg-blue-500' : 'bg-transparent hover:bg-blue-600'
+                                    }`
+                                }
+                            >
+                                <Users className="text-white" size={14} />
+                                <span className="text-[14px]">Students</span>
+                            </NavLink>
 
-                         <a href="/students"
-                            className={`flex items-center text-white gap-2 py-2 px-2 
-                rounded rounded-md w-full transition-colors 
-                ${location.pathname === '/students' ? 'bg-blue-500' : 'bg-transparent hover:bg-blue-600'}  `}>
+                            <NavLink
+                                to="/departments"
+                                className={({ isActive }) =>
+                                    `flex items-center text-white gap-2 py-2 px-2 rounded rounded-md w-full transition-colors ${
+                                        isActive ? 'bg-blue-500' : 'bg-transparent hover:bg-blue-600'
+                                    }`
+                                }
+                            >
+                                <Landmark className="text-white" size={14} />
+                                <span className="text-[14px]">Departments</span>
+                            </NavLink>
 
-                            <Users className="text-white" size={14} />
-                            <span className="text-[14px]">Students</span>
-                        </a>
+                            <NavLink
+                                to="/courses"
+                                className={({ isActive }) =>
+                                    `flex items-center text-white gap-2 py-2 px-2 rounded rounded-md w-full transition-colors ${
+                                        isActive ? 'bg-blue-500' : 'bg-transparent hover:bg-blue-600'
+                                    }`
+                                }
+                            >
+                                <Folder className="text-white" size={14} />
+                                <span className="text-[14px]">Courses</span>
+                            </NavLink>
 
-                        <a href="/departments"
-                            className={`flex items-center text-white gap-2 py-2 px-2 
-                rounded rounded-md w-full transition-colors 
-                ${location.pathname === '/departments' ? 'bg-blue-500' : 'bg-transparent hover:bg-blue-600'}  `}>
+                            <NavLink
+                                to="/academic-programs"
+                                className={({ isActive }) =>
+                                    `flex items-center text-white gap-2 py-2 px-2 rounded rounded-md w-full transition-colors ${
+                                        isActive || location.pathname === '/academicPrograms' ? 'bg-blue-500' : 'bg-transparent hover:bg-blue-600'
+                                    }`
+                                }
+                            >
+                                <GraduationCap className="text-white" size={14} />
+                                <span className="text-[14px]">Academic Programs</span>
+                            </NavLink>
 
-                            <Landmark className="text-white" size={14} />
-                            <span className="text-[14px]">Departments</span>
-                        </a>
+                            <NavLink
+                                to="/course-assignments"
+                                className={({ isActive }) =>
+                                    `flex items-center text-white gap-2 py-2 px-2 rounded rounded-md w-full transition-colors ${
+                                        isActive ? 'bg-blue-500' : 'bg-transparent hover:bg-blue-600'
+                                    }`
+                                }
+                            >
+                                <BookOpen className="text-white" size={14} />
+                                <span className="text-[14px]">Course Assignments</span>
+                            </NavLink>
 
+                            {isSuperAdmin && (
+                                <NavLink
+                                    to="/admins"
+                                    className={({ isActive }) =>
+                                        `flex items-center text-white gap-2 py-2 px-2 rounded rounded-md w-full transition-colors ${
+                                            isActive ? 'bg-blue-500' : 'bg-transparent hover:bg-blue-600'
+                                        }`
+                                    }
+                                >
+                                    <ShieldCheck className="text-white" size={14} />
+                                    <span className="text-[14px]">Admins</span>
+                                </NavLink>
+                            )}
+                        </nav>
+                    )}
 
-                        <a href="/courses"
-                            className={`flex items-center text-white gap-2 py-2 px-2 
-                rounded rounded-md w-full transition-colors 
-                ${location.pathname === '/courses' ? 'bg-blue-500' : 'bg-transparent hover:bg-blue-600'}  `}>
-
-                            <Folder className="text-white" size={14} />
-                            <span className="text-[14px]">Courses</span>
-                        </a>
-
-                        <a href="/academic-programs"
-                            className={`flex items-center text-white gap-2 py-2 px-2 
-                rounded rounded-md w-full transition-colors 
-                ${location.pathname === '/academic-programs' || location.pathname === '/academicPrograms' ? 'bg-blue-500' : 'bg-transparent hover:bg-blue-600'}  `}>
-
-                            <GraduationCap className="text-white" size={14} />
-                            <span className="text-[14px]">Academic Programs</span>
-                        </a>
-
-
-                       
-
-                        <a href="/course-assignments"
-                            className={`flex items-center text-white gap-2 py-2 px-2 
-                rounded rounded-md w-full transition-colors 
-                ${location.pathname === '/course-assignments' ? 'bg-blue-500' : 'bg-transparent hover:bg-blue-600'}  `}>
-
-                            <BookOpen className="text-white" size={14} />
-                            <span className="text-[14px]">Course Assignments</span>
-                        </a>
-
-                        {isSuperAdmin && (
-                            <a href="/admins"
-                                className={`flex items-center text-white gap-2 py-2 px-2 
-                    rounded rounded-md w-full transition-colors 
-                    ${location.pathname === '/admins' ? 'bg-blue-500' : 'bg-transparent hover:bg-blue-600'}  `}>
-
-                                <ShieldCheck className="text-white" size={14} />
-                                <span className="text-[14px]">Admins</span>
-                            </a>
-                        )}
-
-                        
-                    </nav>
+                    
                 </div>
             </aside>
 

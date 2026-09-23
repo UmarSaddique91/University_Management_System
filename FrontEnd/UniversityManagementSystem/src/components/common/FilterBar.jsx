@@ -18,14 +18,23 @@ const FilterBar = ({
       return actionButton;
     }
 
+
+    //Here we check the type of Action Button whether it is Object or string
+
     const isObject = typeof actionButton === 'object' && actionButton !== null;
     const isString = typeof actionButton === 'string';
+
+
+    //For button label
 
     const label =
       (isObject ? (actionButton.label || actionButton.text || actionButton.title) : null) ||
       (isString ? actionButton : null) ||
       buttonText ||
       'Add New';
+
+
+      //For button Icon
 
     const IconComponent = isObject && actionButton.icon !== undefined ? actionButton.icon : Plus;
     const onClick = (isObject && actionButton.onClick) || onActionClick;

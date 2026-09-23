@@ -212,6 +212,10 @@ const Students = () => {
     fetchStudents();
   }, []);
 
+
+
+  //User Should navigate to page one when filter applies
+
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, selectDepartmet, selectAcademicProgram, selectSession]);
@@ -263,7 +267,9 @@ const Students = () => {
       onChange: (e) => setSelectSession(e.target.value),
       options: [
         "All Sessions",
-        ...academicSession.map((s) => s.sessionName),
+        ...academicSession
+          .filter((s) => !s.sessionName?.startsWith('TestSession_'))
+          .map((s) => s.sessionName),
       ],
     },
   ];
@@ -377,6 +383,11 @@ const Students = () => {
     isRegistered: Boolean(item.userId && item.email),
   }));
 
+
+
+
+  //Filtering While Searching
+
   const filterStudent = studentsData
     .filter((item) => {
       const search = searchTerm.toLowerCase();
@@ -479,10 +490,12 @@ const Students = () => {
       placeholder: "Select Session",
       searchPlaceholder: "Search Session...",
       required: true,
-      options: academicSession.map((item) => ({
-        label: `${item.sessionName}${item.isActive ? ' (Active)' : ''}`,
-        value: String(item.id),
-      })),
+      options: academicSession
+        .filter((s) => !s.sessionName?.startsWith('TestSession_') && (s.isActive || String(s.id) === String(formState.academicSessionId)))
+        .map((item) => ({
+          label: `${item.sessionName}${item.isActive ? ' (Active)' : ''}`,
+          value: String(item.id),
+        })),
     },
     {
       name: "currentSemesterId",
