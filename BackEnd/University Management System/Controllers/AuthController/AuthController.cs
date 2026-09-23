@@ -50,15 +50,46 @@ namespace University_Management_System.Controllers
 
                 var userRoles = await _userManager.GetRolesAsync(user);
 
-                // If user is Admin, verify AdminProfile is Active
-                if (userRoles.Contains(SystemRoles.Admin))
+                // Determine user display name
+                string displayName = "Admin";
+                if (userRoles.Contains(SystemRoles.superAdmin))
+                {
+                    displayName = "Super Admin";
+                }
+                else if (userRoles.Contains(SystemRoles.Admin))
                 {
                     var adminProfile = await _context.AdminProfiles
                         .FirstOrDefaultAsync(a => a.UserId == user.Id || (a.Email != null && a.Email.ToLower() == user.Email.ToLower()));
 
-                    if (adminProfile != null && !adminProfile.Status.Equals("Active", StringComparison.OrdinalIgnoreCase))
+                    if (adminProfile != null)
                     {
-                        return Unauthorized(new { message = "Your admin account is inactive. Please contact the Super Administrator." });
+                        if (!adminProfile.Status.Equals("Active", StringComparison.OrdinalIgnoreCase))
+                        {
+                            return Unauthorized(new { message = "Your admin account is inactive. Please contact the Super Administrator." });
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(adminProfile.AdminName))
+                        {
+                            displayName = adminProfile.AdminName;
+                        }
+                    }
+                }
+                else if (userRoles.Contains(SystemRoles.Teacher))
+                {
+                    var teacher = await _context.Teachers
+                        .FirstOrDefaultAsync(t => t.UserId == user.Id || (t.Email != null && t.Email.ToLower() == user.Email.ToLower()));
+                    if (teacher != null && !string.IsNullOrWhiteSpace(teacher.TeacherName))
+                    {
+                        displayName = teacher.TeacherName;
+                    }
+                }
+                else if (userRoles.Contains(SystemRoles.Student))
+                {
+                    var student = await _context.Students
+                        .FirstOrDefaultAsync(s => s.UserId == user.Id || (s.Email != null && s.Email.ToLower() == user.Email.ToLower()));
+                    if (student != null && !string.IsNullOrWhiteSpace(student.StudentName))
+                    {
+                        displayName = student.StudentName;
                     }
                 }
 
@@ -90,6 +121,7 @@ namespace University_Management_System.Controllers
                     token = new JwtSecurityTokenHandler().WriteToken(token),
                     expiration = token.ValidTo,
                     roles = userRoles,
+                    name = displayName,
                     message="Login Successfull"
 
                 });
