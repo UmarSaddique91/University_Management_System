@@ -67,6 +67,14 @@ namespace University_Management_System.Data
             builder.Entity<Enrollment>()
                 .Property(e => e.Status)
                 .HasDefaultValue("Active");
+
+            builder.Entity<AcademicSession>()
+                .HasIndex(s => s.SessionName)
+                .IsUnique();
+
+            builder.Entity<Semester>()
+                .HasIndex(s => new { s.AcademicProgramId, s.AcademicSessionId, s.SemesterNumber })
+                .IsUnique();
         }
     }
 }

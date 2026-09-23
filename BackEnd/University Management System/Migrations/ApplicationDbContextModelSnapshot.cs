@@ -286,12 +286,15 @@ namespace University_Management_System.Migrations
 
                     b.Property<string>("SessionName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("SessionName")
+                        .IsUnique();
 
                     b.ToTable("AcademicSessions");
                 });
@@ -595,9 +598,10 @@ namespace University_Management_System.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AcademicProgramId");
-
                     b.HasIndex("AcademicSessionId");
+
+                    b.HasIndex("AcademicProgramId", "AcademicSessionId", "SemesterNumber")
+                        .IsUnique();
 
                     b.ToTable("Semesters");
                 });

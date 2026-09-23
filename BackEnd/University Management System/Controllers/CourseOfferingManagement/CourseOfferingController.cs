@@ -10,14 +10,16 @@ namespace University_Management_System.Controllers.CourseOfferingManagement
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = $"{SystemRoles.superAdmin},{SystemRoles.Admin}")]
+    [Authorize(Policy = "Admin Access")]
     public class CourseOfferingController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly Services.EnrollmentSyncService _enrollmentSyncService;
 
-        public CourseOfferingController(ApplicationDbContext context)
+        public CourseOfferingController(ApplicationDbContext context, Services.EnrollmentSyncService enrollmentSyncService)
         {
             _context = context;
+            _enrollmentSyncService = enrollmentSyncService;
         }
 
         // GET: api/CourseOffering
@@ -168,7 +170,10 @@ namespace University_Management_System.Controllers.CourseOfferingManagement
             _context.CourseOfferings.Add(offering);
             await _context.SaveChangesAsync();
 
-            await EnrollExistingStudentsInOfferingAsync(offering);
+            if (offering.Status == "Active")
+            {
+                await _enrollmentSyncService.SynchronizeSemesterEnrollmentsAsync(offering.SemesterId);
+            }
 
             return Ok(new
             {
@@ -276,7 +281,7 @@ namespace University_Management_System.Controllers.CourseOfferingManagement
 
             if (offering.Status == "Active")
             {
-                await EnrollExistingStudentsInOfferingAsync(offering);
+                await _enrollmentSyncService.SynchronizeSemesterEnrollmentsAsync(offering.SemesterId);
             }
 
             return Ok(new { message = "Course assignment updated successfully" });
@@ -301,7 +306,7 @@ namespace University_Management_System.Controllers.CourseOfferingManagement
 
             if (offering.Status == "Active")
             {
-                await EnrollExistingStudentsInOfferingAsync(offering);
+                await _enrollmentSyncService.SynchronizeSemesterEnrollmentsAsync(offering.SemesterId);
             }
 
             return Ok(new { message = $"Status updated to {nextStatus}", status = nextStatus });
@@ -363,41 +368,6 @@ namespace University_Management_System.Controllers.CourseOfferingManagement
                 .ToListAsync();
 
             return Ok(workload);
-        }
-
-        private async Task EnrollExistingStudentsInOfferingAsync(CourseOffering offering)
-        {
-            if (offering.Status != "Active") return;
-
-            var studentsInSemester = await _context.Students
-                .Where(s => s.CurrentSemesterId == offering.SemesterId)
-                .ToListAsync();
-
-            if (studentsInSemester.Any())
-            {
-                var studentIds = studentsInSemester.Select(s => s.Id).ToList();
-                var existingEnrollmentStudentIds = await _context.Enrollments
-                    .Where(e => e.CourseOfferingId == offering.Id && studentIds.Contains(e.StudentId))
-                    .Select(e => e.StudentId)
-                    .ToListAsync();
-
-                var newEnrollments = studentsInSemester
-                    .Where(s => !existingEnrollmentStudentIds.Contains(s.Id))
-                    .Select(s => new Enrollment
-                    {
-                        StudentId = s.Id,
-                        CourseOfferingId = offering.Id,
-                        Status = "Active",
-                        CreatedAt = DateTime.UtcNow
-                    })
-                    .ToList();
-
-                if (newEnrollments.Any())
-                {
-                    _context.Enrollments.AddRange(newEnrollments);
-                    await _context.SaveChangesAsync();
-                }
-            }
         }
     }
 }

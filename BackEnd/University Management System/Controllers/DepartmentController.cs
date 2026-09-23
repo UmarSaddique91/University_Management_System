@@ -10,7 +10,7 @@ namespace University_Management_System.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    [Authorize(Policy = "Admin Access")]
     public class DepartmentController : ControllerBase
     {
         private readonly ApplicationDbContext _context;

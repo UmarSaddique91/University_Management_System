@@ -10,7 +10,7 @@ namespace University_Management_System.Controllers.AcademicProgramController
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = SystemRoles.superAdmin)]
+    [Authorize(Policy = "Admin Access")]
     public class AcademicProgramController : ControllerBase
     {
         private readonly ApplicationDbContext _context;

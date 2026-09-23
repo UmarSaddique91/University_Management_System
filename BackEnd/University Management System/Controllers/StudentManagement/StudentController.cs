@@ -14,21 +14,24 @@ namespace University_Management_System.Controllers.StudentManagement
     [Route("api/[controller]")]
     [ApiController]
 
-    [Authorize (Roles = SystemRoles.superAdmin)]
+    [Authorize (Policy ="Admin Access")]
     public class StudentController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<IdentityUser> _userManager;
         private readonly EmailService _emailService;
+        private readonly EnrollmentSyncService _enrollmentSyncService;
 
         public StudentController(
             ApplicationDbContext context,
             UserManager<IdentityUser> userManager,
-            EmailService emailService)
+            EmailService emailService,
+            EnrollmentSyncService enrollmentSyncService)
         {
             _context = context;
             _userManager = userManager;
             _emailService = emailService;
+            _enrollmentSyncService = enrollmentSyncService;
         }
 
 
@@ -126,28 +129,11 @@ namespace University_Management_System.Controllers.StudentManagement
                 _context.Students.Add(student);
                 await _context.SaveChangesAsync();
 
-                // Auto enroll into all active course offerings for the assigned semester
+                // Auto enroll into all active course offerings for the assigned semester via EnrollmentSyncService
                 int enrollmentsCreated = 0;
                 if (student.CurrentSemesterId.HasValue)
                 {
-                    var activeOfferings = await _context.CourseOfferings
-                        .Where(co => co.SemesterId == student.CurrentSemesterId.Value && co.Status == "Active")
-                        .ToListAsync();
-
-                    if (activeOfferings.Any())
-                    {
-                        var enrollments = activeOfferings.Select(co => new Enrollment
-                        {
-                            StudentId = student.Id,
-                            CourseOfferingId = co.Id,
-                            Status = "Active",
-                            CreatedAt = DateTime.UtcNow
-                        }).ToList();
-
-                        _context.Enrollments.AddRange(enrollments);
-                        await _context.SaveChangesAsync();
-                        enrollmentsCreated = enrollments.Count;
-                    }
+                    enrollmentsCreated = await _enrollmentSyncService.SynchronizeSemesterEnrollmentsAsync(student.CurrentSemesterId.Value);
                 }
 
                 // Create RegistrationInvitation if email is provided
@@ -401,42 +387,14 @@ namespace University_Management_System.Controllers.StudentManagement
                 student.Semester = model.Semester.Value;
             }
 
-            // If semester changed or was newly assigned, enroll student in active offerings for the new semester
+            await _context.SaveChangesAsync();
+
+            // If semester changed or was newly assigned, enroll student in active offerings for the new semester via EnrollmentSyncService
             int newlyEnrolledCount = 0;
             if (student.CurrentSemesterId.HasValue && student.CurrentSemesterId != oldSemesterId)
             {
-                var activeOfferings = await _context.CourseOfferings
-                    .Where(co => co.SemesterId == student.CurrentSemesterId.Value && co.Status == "Active")
-                    .ToListAsync();
-
-                if (activeOfferings.Any())
-                {
-                    var activeOfferingIds = activeOfferings.Select(o => o.Id).ToList();
-                    var existingEnrollmentOfferingIds = await _context.Enrollments
-                        .Where(e => e.StudentId == student.Id && activeOfferingIds.Contains(e.CourseOfferingId))
-                        .Select(e => e.CourseOfferingId)
-                        .ToListAsync();
-
-                    var newEnrollments = activeOfferings
-                        .Where(o => !existingEnrollmentOfferingIds.Contains(o.Id))
-                        .Select(o => new Enrollment
-                        {
-                            StudentId = student.Id,
-                            CourseOfferingId = o.Id,
-                            Status = "Active",
-                            CreatedAt = DateTime.UtcNow
-                        })
-                        .ToList();
-
-                    if (newEnrollments.Any())
-                    {
-                        _context.Enrollments.AddRange(newEnrollments);
-                        newlyEnrolledCount = newEnrollments.Count;
-                    }
-                }
+                newlyEnrolledCount = await _enrollmentSyncService.SynchronizeSemesterEnrollmentsAsync(student.CurrentSemesterId.Value);
             }
-
-            await _context.SaveChangesAsync();
 
             var updateMessage = newlyEnrolledCount > 0
                 ? $"Student updated successfully and enrolled in {newlyEnrolledCount} new course(s)."

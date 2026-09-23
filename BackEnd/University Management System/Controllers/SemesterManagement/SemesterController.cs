@@ -50,8 +50,12 @@ namespace University_Management_System.Controllers.SemesterManagement
                     SessionName = s.AcademicSession != null ? s.AcademicSession.SessionName : null,
                     Status = s.Status ?? "Active",
 
-                    // Student Count: distinct students enrolled through Active CourseOfferings belonging to that Semester
-                    StudentCount = _context.Enrollments
+                    // Student Count: current Students assigned to that Semester
+                    StudentCount = _context.Students
+                        .Count(st => st.CurrentSemesterId == s.Id),
+
+                    // Enrolled Students Count: distinct students enrolled through Active CourseOfferings
+                    ActiveEnrolledStudentsCount = _context.Enrollments
                         .Where(e => e.CourseOffering.SemesterId == s.Id && e.Status == "Active" && e.CourseOffering.Status == "Active")
                         .Select(e => e.StudentId)
                         .Distinct()
@@ -76,7 +80,8 @@ namespace University_Management_System.Controllers.SemesterManagement
                         .Count(),
 
                     // Comprehensive Dependency Detection
-                    HasDependencies = _context.CourseOfferings.Any(co => co.SemesterId == s.Id) ||
+                    HasDependencies = _context.Students.Any(st => st.CurrentSemesterId == s.Id) ||
+                                      _context.CourseOfferings.Any(co => co.SemesterId == s.Id) ||
                                       _context.Enrollments.Any(e => e.CourseOffering.SemesterId == s.Id) ||
                                       _context.Attendance.Any(a => a.CourseOffering.SemesterId == s.Id) ||
                                       _context.Exams.Any(ex => ex.CourseOffering.SemesterId == s.Id) ||
@@ -105,8 +110,13 @@ namespace University_Management_System.Controllers.SemesterManagement
                     SessionName = s.AcademicSession != null ? s.AcademicSession.SessionName : null,
                     Status = s.Status ?? "Active",
 
-                    StudentCount = _context.Enrollments
-                        .Where(e => e.CourseOffering.SemesterId == s.Id)
+                    // Student Count: current Students assigned to that Semester
+                    StudentCount = _context.Students
+                        .Count(st => st.CurrentSemesterId == s.Id),
+
+                    // Enrolled Students Count: distinct students enrolled through Active CourseOfferings
+                    ActiveEnrolledStudentsCount = _context.Enrollments
+                        .Where(e => e.CourseOffering.SemesterId == s.Id && e.Status == "Active" && e.CourseOffering.Status == "Active")
                         .Select(e => e.StudentId)
                         .Distinct()
                         .Count(),
@@ -126,7 +136,8 @@ namespace University_Management_System.Controllers.SemesterManagement
                         .Distinct()
                         .Count(),
 
-                    HasDependencies = _context.CourseOfferings.Any(co => co.SemesterId == s.Id) ||
+                    HasDependencies = _context.Students.Any(st => st.CurrentSemesterId == s.Id) ||
+                                      _context.CourseOfferings.Any(co => co.SemesterId == s.Id) ||
                                       _context.Enrollments.Any(e => e.CourseOffering.SemesterId == s.Id) ||
                                       _context.Attendance.Any(a => a.CourseOffering.SemesterId == s.Id) ||
                                       _context.Exams.Any(ex => ex.CourseOffering.SemesterId == s.Id) ||
@@ -319,17 +330,18 @@ namespace University_Management_System.Controllers.SemesterManagement
             }
 
             // Safe-delete check: Inspect all linked academic records
+            var hasStudents = await _context.Students.AnyAsync(st => st.CurrentSemesterId == id);
             var hasOfferings = await _context.CourseOfferings.AnyAsync(co => co.SemesterId == id);
             var hasEnrollments = await _context.Enrollments.AnyAsync(e => e.CourseOffering.SemesterId == id);
             var hasAttendance = await _context.Attendance.AnyAsync(a => a.CourseOffering.SemesterId == id);
             var hasExams = await _context.Exams.AnyAsync(ex => ex.CourseOffering.SemesterId == id);
             var hasGrades = await _context.Grades.AnyAsync(g => g.Exam.CourseOffering.SemesterId == id);
 
-            if (hasOfferings || hasEnrollments || hasAttendance || hasExams || hasGrades)
+            if (hasStudents || hasOfferings || hasEnrollments || hasAttendance || hasExams || hasGrades)
             {
                 return BadRequest(new
                 {
-                    message = $"Cannot delete Semester {semester.SemesterNumber} because it has dependent academic records (Course Offerings, Enrollments, Attendance, Exams, or Grades). Please deactivate the semester instead."
+                    message = $"Cannot delete Semester {semester.SemesterNumber} because it has dependent academic records (Students, Course Offerings, Enrollments, Attendance, Exams, or Grades). Please deactivate the semester instead."
                 });
             }
 

@@ -12,7 +12,7 @@ namespace University_Management_System.Controllers.EnrollmentManagement
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize (Roles =SystemRoles.superAdmin)]
+    [Authorize(Policy = "Admin Access")]
     public class EnrollmentController : ControllerBase
     {
         private readonly ApplicationDbContext _context;

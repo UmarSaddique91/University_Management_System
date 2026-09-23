@@ -9,9 +9,11 @@ using University_Management_System.Models.MainModels;
 
 namespace University_Management_System.Controllers
 {
-    [Authorize]
+    
     [Route("api/[controller]")]
     [ApiController]
+
+    [Authorize(Policy = "Admin Access")]
     public class TeacherController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
@@ -99,7 +101,7 @@ namespace University_Management_System.Controllers
         }
 
         // GET: api/Teacher
-        [Authorize(Roles = SystemRoles.superAdmin)]
+        
         [HttpGet]
         public async Task<IActionResult> GetTeachers(string? name, string? teacherId, int? DepartmentId, string? status)
         {

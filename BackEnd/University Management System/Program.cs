@@ -25,8 +25,8 @@ builder.Services.AddIdentity<IdentityUser, IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>().AddDefaultTokenProviders();
 
 //For EmailSmtp
-
 builder.Services.AddScoped<EmailService>();
+builder.Services.AddScoped<EnrollmentSyncService>();
 
 //JWT Authentication
 builder.Services.AddAuthentication(options =>
@@ -81,6 +81,22 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+
+
+//Policy for Admin Authorization
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("Admin Access", policy =>
+    {
+        policy.RequireRole(
+            University_Management_System.Constants.SystemRoles.superAdmin,
+            University_Management_System.Constants.SystemRoles.Admin
+
+        );
+    });
+});
+
 //Axios Permission
 
 builder.Services.AddCors(options =>
@@ -113,6 +129,9 @@ using (var scope= app.Services.CreateScope())
     await RoleSeeder.SeedRolesAsync(roleManager);
     await SuperAdminSeeder.SuperAdminSeederAsync(userManager,app.Configuration);
     await AcademicDataSeeder.SeedAcademicDataAsync(dbContext);
+
+    var enrollmentSyncService = scope.ServiceProvider.GetRequiredService<EnrollmentSyncService>();
+    await enrollmentSyncService.SynchronizeAllActiveSemestersAsync();
 }
 
 // Configure the HTTP request pipeline.

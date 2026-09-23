@@ -1,21 +1,18 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Authorization.Infrastructure;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using University_Management_System.Constants;
 using University_Management_System.Data;
 using University_Management_System.DTOs;
 using University_Management_System.Models.MainModels;
-using University_Management_System.Constants;
-
 
 namespace University_Management_System.Controllers.AcademicSessionManagemen
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize (Roles = SystemRoles.superAdmin)]
+    [Authorize(Policy = "Admin Access")]
     public class AcademicSessionController : ControllerBase
     {
-
         private readonly ApplicationDbContext _context;
 
         public AcademicSessionController(ApplicationDbContext context)
@@ -23,108 +20,159 @@ namespace University_Management_System.Controllers.AcademicSessionManagemen
             _context = context;
         }
 
-        //Put Request For Sessions
-
-        public IActionResult AddAcademicSession([FromBody] AcademicSessionDTO model)
+        // POST: api/AcademicSession
+        [HttpPost]
+        public async Task<IActionResult> AddAcademicSession([FromBody] AcademicSessionDTO model)
         {
-            if(model.EndDate <= model.StartDate)
+            if (string.IsNullOrWhiteSpace(model.SessionName))
             {
-                return BadRequest(new { Message = "EndDate must be greater than Start Date" });
+                return BadRequest(new { message = "Session name is required" });
+            }
+
+            var cleanName = model.SessionName.Trim();
+
+            // Enforce uniqueness on SessionName
+            var nameExists = await _context.AcademicSessions
+                .AnyAsync(s => s.SessionName.ToLower() == cleanName.ToLower());
+
+            if (nameExists)
+            {
+                return BadRequest(new { message = $"An academic session with name '{cleanName}' already exists." });
+            }
+
+            if (model.EndDate <= model.StartDate)
+            {
+                return BadRequest(new { message = "EndDate must be greater than Start Date" });
+            }
+
+            // Enforce single active session rule: activating this session deactivates any other active session
+            if (model.IsActive)
+            {
+                var otherActiveSessions = await _context.AcademicSessions
+                    .Where(s => s.IsActive)
+                    .ToListAsync();
+
+                foreach (var activeSession in otherActiveSessions)
+                {
+                    activeSession.IsActive = false;
+                }
             }
 
             var session = new AcademicSession
             {
-                SessionName = model.SessionName,
+                SessionName = cleanName,
                 StartDate = model.StartDate,
                 EndDate = model.EndDate,
                 IsActive = model.IsActive
             };
 
             _context.AcademicSessions.Add(session);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Session Added Successfully" });
+            return Ok(new { message = "Session Added Successfully", id = session.Id });
         }
 
-
-        //Get Api for Academic Session
-
+        // GET: api/AcademicSession
         [HttpGet]
-        public IActionResult GetAcademicSessions()
+        public async Task<IActionResult> GetAcademicSessions()
         {
-            var sessions = _context.AcademicSessions.ToList();
+            var sessions = await _context.AcademicSessions
+                .OrderByDescending(s => s.IsActive)
+                .ThenByDescending(s => s.StartDate)
+                .ToListAsync();
 
             return Ok(sessions);
         }
 
-
-        //Get using Id
-
-        [HttpGet("{Id}")]
-
-        public IActionResult GetAcademicSessionById(int Id)
+        // GET: api/AcademicSession/{id}
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetAcademicSessionById(int id)
         {
-            var session = _context.AcademicSessions.FirstOrDefault(r => r.Id == Id);
-            if(session == null){
-                return BadRequest(new { message = "Session Not Found " });
-
-
-                
+            var session = await _context.AcademicSessions.FirstOrDefaultAsync(r => r.Id == id);
+            if (session == null)
+            {
+                return NotFound(new { message = "Session Not Found" });
             }
 
             return Ok(session);
-
-
         }
 
-        //Update API
-
+        // PUT: api/AcademicSession/{id}
         [HttpPut("{id}")]
-        public IActionResult UpdateAcademicSession(
-    int id,
-    [FromBody] AcademicSessionDTO model)
+        public async Task<IActionResult> UpdateAcademicSession(int id, [FromBody] AcademicSessionDTO model)
         {
-            var session = _context.AcademicSessions
-                .FirstOrDefault(s => s.Id == id);
-
+            var session = await _context.AcademicSessions.FirstOrDefaultAsync(s => s.Id == id);
             if (session == null)
             {
                 return NotFound(new { message = "Academic session not found" });
+            }
+
+            if (string.IsNullOrWhiteSpace(model.SessionName))
+            {
+                return BadRequest(new { message = "Session name is required" });
+            }
+
+            var cleanName = model.SessionName.Trim();
+
+            // Enforce uniqueness on SessionName (excluding self)
+            var nameExists = await _context.AcademicSessions
+                .AnyAsync(s => s.SessionName.ToLower() == cleanName.ToLower() && s.Id != id);
+
+            if (nameExists)
+            {
+                return BadRequest(new { message = $"An academic session with name '{cleanName}' already exists." });
             }
 
             if (model.EndDate <= model.StartDate)
             {
-                return BadRequest(new
-                {
-                    message = "End date must be greater than start date"
-                });
+                return BadRequest(new { message = "End date must be greater than start date" });
             }
 
-            session.SessionName = model.SessionName;
+            // Enforce single active session rule
+            if (model.IsActive)
+            {
+                var otherActiveSessions = await _context.AcademicSessions
+                    .Where(s => s.IsActive && s.Id != id)
+                    .ToListAsync();
+
+                foreach (var activeSession in otherActiveSessions)
+                {
+                    activeSession.IsActive = false;
+                }
+            }
+
+            session.SessionName = cleanName;
             session.StartDate = model.StartDate;
             session.EndDate = model.EndDate;
             session.IsActive = model.IsActive;
 
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
 
             return Ok(new { message = "Academic session updated successfully" });
         }
 
-        //DeleteApi
-
+        // DELETE: api/AcademicSession/{id}
         [HttpDelete("{id}")]
-        public IActionResult DeleteAcademicSession(int id)
+        public async Task<IActionResult> DeleteAcademicSession(int id)
         {
-            var session = _context.AcademicSessions
-                .FirstOrDefault(s => s.Id == id);
-
+            var session = await _context.AcademicSessions.FirstOrDefaultAsync(s => s.Id == id);
             if (session == null)
             {
                 return NotFound(new { message = "Academic session not found" });
             }
 
+            // Check if any Semesters reference this Session
+            var hasSemesters = await _context.Semesters.AnyAsync(s => s.AcademicSessionId == id);
+            if (hasSemesters)
+            {
+                return BadRequest(new
+                {
+                    message = "Cannot delete academic session because it is referenced by existing semesters. Deactivate it instead."
+                });
+            }
+
             _context.AcademicSessions.Remove(session);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
 
             return Ok(new { message = "Academic session deleted successfully" });
         }

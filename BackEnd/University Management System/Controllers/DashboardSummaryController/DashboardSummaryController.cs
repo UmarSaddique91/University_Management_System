@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +9,8 @@ namespace University_Management_System.Controllers.DashboardSummaryController
 {
     [Route("api/[controller]")]
     [ApiController]
+
+    [Authorize(Policy = "Admin Access")]
     public class DashboardSummaryController : ControllerBase
     {
         
