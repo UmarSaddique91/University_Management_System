@@ -1,39 +1,41 @@
 import React from 'react'
-import {useState} from 'react'
+import { useState } from 'react'
 import LoginImg from '../../assets/LoginImg.png'
-import {useNavigate} from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { Eye, EyeOff } from 'lucide-react';
 
 
 const Login = () => {
 
-  const navigate=useNavigate();
+  const navigate = useNavigate();
 
-  const [email,setEmail]= useState('');
-  const [password,setPassword]=useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
-  const handleLogin=async (e)=>{
+  const handleLogin = async (e) => {
     e.preventDefault();
 
     try {
 
-      const response= await axios.post(
+      const response = await axios.post(
         "https://localhost:7272/api/Auth/login",
-        {email:email,
-        password:password}
-      )
+        { email: email, password: password }
+      );
 
-      localStorage.setItem("token",response.data.token)
-      localStorage.setItem("roles",JSON.stringify(response.data.roles))
+      localStorage.setItem("token", response.data.token);
+      localStorage.setItem("roles", JSON.stringify(response.data.roles));
+      localStorage.setItem("userName", response.data.name || (response.data.roles?.includes("SuperAdmin") ? "Super Admin" : "Admin"));
 
-       navigate('/dashboard')
+      navigate('/dashboard');
       
     } catch (error) {
-      console.log("Login Failed", error)
+      console.log("Login Failed", error);
     }
 
    
-  }
+  };
 
   
   return (
@@ -55,7 +57,7 @@ const Login = () => {
 
             {/* Form  */}
             <div>
-              <form onSubmit={handleLogin}className="mt-6 space-y-4">
+              <form onSubmit={handleLogin} className="mt-6 space-y-4">
 
                 {/* Email Address */}
                 <div>
@@ -71,24 +73,32 @@ const Login = () => {
                 {/* Password  */}
                 <div>
                   <label htmlFor="" className="font-semibold">Password</label>
-                  <input type="password"
-                  value={password}
-                  onChange={(e)=>setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  className="w-full px-4 py-2 my-2 border border-gray-800 hover:border-gray-300 focus rounded-md docus:outline-none"
-                  />
+                  <div className="relative">
+                    <input 
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e)=>setPassword(e.target.value)}
+                      placeholder="Enter your password"
+                      className="w-full px-4 py-2 my-2 pr-10 border border-gray-800 hover:border-gray-300 focus rounded-md focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 cursor-pointer"
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
                 </div>
 
-                <div className="flex justify-between items-center mt-4 ">
-                <label htmlFor="" className="flex items-center cursor-pointer" >
-                  <input type="checkbox" className='mr-2 '/>
-                  Keep me signed in
-                </label>
-
-                <span 
-                onClick={()=>navigate("forgotPassword")}
-                className="text-blue-500 hover:text-blue-700 cursor-pointer  ">Forgot Password?</span>
-              </div>
+                <div className="flex justify-end items-center mt-4">
+                  <span 
+                    onClick={() => navigate("/forgotPassword")}
+                    className="text-blue-500 hover:text-blue-700 cursor-pointer text-sm"
+                  >
+                    Forgot Password?
+                  </span>
+                </div>
               
               <button 
               

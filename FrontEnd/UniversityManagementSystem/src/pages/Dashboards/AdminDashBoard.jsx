@@ -58,6 +58,8 @@ useEffect(()=>{
 },[])
 
 
+  const userName = localStorage.getItem("userName") || "Admin";
+
   return (
 
     <Layout>
@@ -67,7 +69,7 @@ useEffect(()=>{
         <div className='flex justify-between items-center text-black'>
           <div>
             <h1 className='text-[18px] font-bold'>Dashboard</h1>
-          <span className='text-[14px] text-slate-600'>Welcome back, Admin! Here's what's hapenning at your university. </span>
+          <span className='text-[14px] text-slate-600'>Welcome back, {userName}! Here's what's happening at your university. </span>
           </div>
           
           <div className='text-[14px] font-semibold'>
