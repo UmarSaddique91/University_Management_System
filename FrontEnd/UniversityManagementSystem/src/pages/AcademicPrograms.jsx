@@ -3,6 +3,7 @@ import Layout from '../layout/Layout';
 import FilterBar from '../components/common/FilterBar';
 import DataTable from '../components/common/DataTable';
 import Form from '../components/common/Form';
+import DeleteConfirmationModal from '../components/common/DeleteConfirmationModal';
 import {
   Plus,
   ChevronDown,
@@ -39,6 +40,9 @@ const AcademicPrograms = () => {
   const [showSemesterModal, setShowSemesterModal] = useState(false);
   const [selectedSemester, setSelectedSemester] = useState(null);
   const [activeProgramForSemester, setActiveProgramForSemester] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   const fetchInitialData = async () => {
     try {
@@ -178,34 +182,62 @@ const AcademicPrograms = () => {
     }
   };
 
-  const handleDeleteProgram = async (row) => {
-    const isConfirmed = window.confirm(
-      `Are you sure you want to delete ${row.programName || 'this program'} (${row.programCode})?`
-    );
-    if (!isConfirmed) return;
+  const handleDeleteProgram = (row) => {
+    setDeleteTarget({ type: 'program', item: row });
+    setDeleteError('');
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    setDeleteError('');
 
     try {
       const token = localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-      await axios.delete(
-        `https://localhost:7272/api/AcademicProgram/${row.dbId}`,
-        { headers }
-      );
+      if (deleteTarget.type === 'program') {
+        const row = deleteTarget.item;
+        await axios.delete(
+          `https://localhost:7272/api/AcademicProgram/${row.dbId}`,
+          { headers }
+        );
 
-      setPrograms((prev) => {
-        const updated = prev.filter((p) => p.id !== row.dbId);
-        const newTotalPages = Math.max(1, Math.ceil(updated.length / 10));
-        setCurrentPage((curr) => Math.min(curr, newTotalPages));
-        return updated;
-      });
-      if (expandedProgramId === row.dbId) {
-        setExpandedProgramId(null);
-        setExpandedSemesters([]);
+        setPrograms((prev) => {
+          const updated = prev.filter((p) => p.id !== row.dbId);
+          const newTotalPages = Math.max(1, Math.ceil(updated.length / 10));
+          setCurrentPage((curr) => Math.min(curr, newTotalPages));
+          return updated;
+        });
+        if (expandedProgramId === row.dbId) {
+          setExpandedProgramId(null);
+          setExpandedSemesters([]);
+        }
+      } else if (deleteTarget.type === 'semester') {
+        const { item: sem, prog } = deleteTarget;
+        await axios.delete(`https://localhost:7272/api/Semester/${sem.id}`, {
+          headers,
+        });
+
+        // Refresh nested semesters & program counts
+        await fetchSemestersForProgram(prog.dbId || prog.id, selectedSessionId);
+        const progRes = await axios.get('https://localhost:7272/api/AcademicProgram', {
+          headers,
+          params: { sessionId: selectedSessionId },
+        });
+        setPrograms(progRes.data || []);
       }
+      setDeleteTarget(null);
     } catch (error) {
-      console.log('Failed to delete academic program', error);
-      alert(error.response?.data?.message || 'Failed to delete academic program');
+      console.log('Failed to delete item', error);
+      setDeleteError(
+        error.response?.data?.message ||
+          (deleteTarget.type === 'semester'
+            ? 'Failed to delete semester. It may have active course offerings, enrollments, attendance, exams, or grades. Deactivate it instead.'
+            : 'Failed to delete academic program')
+      );
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -296,34 +328,9 @@ const AcademicPrograms = () => {
     }
   };
 
-  const handleDeleteSemester = async (prog, sem) => {
-    const isConfirmed = window.confirm(
-      `Are you sure you want to delete Semester ${sem.semesterNumber}?`
-    );
-    if (!isConfirmed) return;
-
-    try {
-      const token = localStorage.getItem('token');
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-
-      await axios.delete(`https://localhost:7272/api/Semester/${sem.id}`, {
-        headers,
-      });
-
-      // Refresh nested semesters & program counts
-      await fetchSemestersForProgram(prog.dbId || prog.id, selectedSessionId);
-      const progRes = await axios.get('https://localhost:7272/api/AcademicProgram', {
-        headers,
-        params: { sessionId: selectedSessionId },
-      });
-      setPrograms(progRes.data || []);
-    } catch (error) {
-      console.log('Failed to delete semester', error);
-      alert(
-        error.response?.data?.message ||
-          'Failed to delete semester. It may have active course offerings, enrollments, attendance, exams, or grades. Deactivate it instead.'
-      );
-    }
+  const handleDeleteSemester = (prog, sem) => {
+    setDeleteTarget({ type: 'semester', item: sem, prog });
+    setDeleteError('');
   };
 
   const currentDate = new Date().toLocaleDateString('en-GB', {
@@ -811,6 +818,28 @@ const AcademicPrograms = () => {
             dropdownFields={semesterDropdownFields}
           />
         )}
+
+        {/* Delete Confirmation Modal */}
+        <DeleteConfirmationModal
+          isOpen={!!deleteTarget}
+          title={deleteTarget?.type === 'semester' ? 'Delete Semester' : 'Delete Academic Program'}
+          itemName={
+            deleteTarget?.type === 'semester'
+              ? `Semester ${deleteTarget.item?.semesterNumber}`
+              : deleteTarget
+              ? `${deleteTarget.item?.programName || 'this program'} (${deleteTarget.item?.programCode})`
+              : ''
+          }
+          isDeleting={isDeleting}
+          errorMessage={deleteError}
+          onConfirm={handleConfirmDelete}
+          onClose={() => {
+            if (!isDeleting) {
+              setDeleteTarget(null);
+              setDeleteError('');
+            }
+          }}
+        />
       </div>
     </Layout>
   );

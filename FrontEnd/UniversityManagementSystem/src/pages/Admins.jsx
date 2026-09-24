@@ -4,6 +4,7 @@ import StatCard from '../components/StatCard';
 import FilterBar from '../components/common/FilterBar';
 import DataTable from '../components/common/DataTable';
 import Form from '../components/common/Form';
+import DeleteConfirmationModal from '../components/common/DeleteConfirmationModal';
 import { ShieldCheck, UserPlus, UserCheck, Clock, Plus } from 'lucide-react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -18,6 +19,9 @@ const Admins = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedAdmin, setSelectedAdmin] = useState(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   // Check if current user has SuperAdmin role
   useEffect(() => {
@@ -140,29 +144,31 @@ const Admins = () => {
     }
   };
 
-  const handleDelete = async (row) => {
-    if (row.isRegistered) {
-      alert('Registered administrators cannot be deleted directly. Deactivate the account instead.');
-      return;
-    }
+  const handleDelete = (row) => {
+    setDeleteTarget(row);
+    setDeleteError('');
+  };
 
-    const isConfirmed = window.confirm(
-      `Are you sure you want to delete pending admin profile for ${row.adminName} (${row.email})?`
-    );
-    if (!isConfirmed) return;
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    setDeleteError('');
 
     try {
       const token = localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-      await axios.delete(`https://localhost:7272/api/Admin/${row.id}`, {
+      await axios.delete(`https://localhost:7272/api/Admin/${deleteTarget.id}`, {
         headers,
       });
 
-      setAdmins((prev) => prev.filter((a) => a.id !== row.id));
+      setAdmins((prev) => prev.filter((a) => a.id !== deleteTarget.id));
+      setDeleteTarget(null);
     } catch (error) {
       console.log('Failed to delete admin', error);
-      alert(error.response?.data?.message || 'Failed to delete admin profile');
+      setDeleteError(error.response?.data?.message || 'Failed to delete admin profile');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -446,6 +452,22 @@ const Admins = () => {
             primaryButtonText={selectedAdmin ? 'Save Changes' : 'Pre-Register Admin'}
           />
         )}
+
+        {/* Delete Confirmation Modal */}
+        <DeleteConfirmationModal
+          isOpen={!!deleteTarget}
+          title="Delete Administrator"
+          itemName={deleteTarget ? `${deleteTarget.adminName} (${deleteTarget.email})` : ''}
+          isDeleting={isDeleting}
+          errorMessage={deleteError}
+          onConfirm={handleConfirmDelete}
+          onClose={() => {
+            if (!isDeleting) {
+              setDeleteTarget(null);
+              setDeleteError('');
+            }
+          }}
+        />
       </div>
     </Layout>
   );

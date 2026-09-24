@@ -4,6 +4,7 @@ import StatCard from '../components/StatCard';
 import FilterBar from '../components/common/FilterBar';
 import DataTable from '../components/common/DataTable';
 import Form from '../components/common/Form';
+import DeleteConfirmationModal from '../components/common/DeleteConfirmationModal';
 import { BookOpen, Users, CheckCircle2, UserCheck, Plus, Briefcase, ChevronDown, ChevronUp } from 'lucide-react';
 import axios from 'axios';
 
@@ -29,6 +30,9 @@ const CourseAssignments = () => {
   const [selectedOffering, setSelectedOffering] = useState(null);
   const [formState, setFormState] = useState({});
   const [showWorkloadView, setShowWorkloadView] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   const fetchData = async () => {
     try {
@@ -160,13 +164,13 @@ const CourseAssignments = () => {
 
       const payload = {
         courseId: Number(formData.courseId),
-        teacherId: Number(formData.teacherId),
+        teacherId: formData.teacherId ? Number(formData.teacherId) : null,
         semesterId: Number(formData.semesterId),
         status: formData.status || 'Active',
       };
 
-      if (!payload.courseId || !payload.teacherId || !payload.semesterId) {
-        alert('Please select Department, Academic Program, Session, Semester, Course, and Teacher.');
+      if (!payload.courseId || !payload.semesterId) {
+        alert('Please select Department, Academic Program, Session, Semester, and Course.');
         return;
       }
 
@@ -214,28 +218,35 @@ const CourseAssignments = () => {
     }
   };
 
-  const handleDelete = async (row) => {
-    const isConfirmed = window.confirm(
-      `Are you sure you want to delete assignment for ${row.courseName} assigned to ${row.teacherName}?`
-    );
-    if (!isConfirmed) return;
+  const handleDelete = (row) => {
+    setDeleteTarget(row);
+    setDeleteError('');
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    setDeleteError('');
 
     try {
       const token = localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-      await axios.delete(`https://localhost:7272/api/CourseOffering/${row.id}`, {
+      await axios.delete(`https://localhost:7272/api/CourseOffering/${deleteTarget.id}`, {
         headers,
       });
 
-      setOfferings((prev) => prev.filter((o) => o.id !== row.id));
+      setOfferings((prev) => prev.filter((o) => o.id !== deleteTarget.id));
       await fetchData();
+      setDeleteTarget(null);
     } catch (error) {
       console.log('Failed to delete assignment', error);
-      alert(
+      setDeleteError(
         error.response?.data?.message ||
           'Failed to delete assignment. It may have student enrollments or attendance dependencies.'
       );
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -346,8 +357,10 @@ const CourseAssignments = () => {
       label: 'Assigned Teacher',
       render: (_, row) => (
         <div>
-          <span className="font-medium text-gray-900 block">{row.teacherName}</span>
-          {row.teacherEmail && (
+          <span className={`font-medium block ${row.teacherName && row.teacherName !== '-' ? 'text-gray-900' : 'text-gray-400'}`}>
+            {row.teacherName && row.teacherName !== '-' ? row.teacherName : '— (Unassigned)'}
+          </span>
+          {row.teacherEmail && row.teacherEmail !== '-' && (
             <span className="text-xs text-gray-500">{row.teacherEmail}</span>
           )}
         </div>
@@ -535,18 +548,21 @@ const CourseAssignments = () => {
     },
     {
       name: 'teacherId',
-      label: 'Assigned Teacher',
+      label: 'Assigned Teacher (Optional)',
       placeholder: !formState.departmentId
         ? 'Select Department First'
-        : (modalTeachers.length === 0 ? 'No active teachers in department' : 'Select Teacher'),
+        : 'Select Teacher (Optional)',
       searchPlaceholder: 'Search Teacher...',
-      required: true,
+      required: false,
       colSpan: 1,
-      disabled: !formState.departmentId || modalTeachers.length === 0,
-      options: modalTeachers.map((t) => ({
-        label: `${t.teacherName} (${t.departmentName || 'Dept'})`,
-        value: String(t.id),
-      })),
+      disabled: !formState.departmentId,
+      options: [
+        { label: '— No Teacher Assigned —', value: '' },
+        ...modalTeachers.map((t) => ({
+          label: `${t.teacherName} (${t.departmentName || 'Dept'})`,
+          value: String(t.id),
+        })),
+      ],
     },
     {
       name: 'status',
@@ -731,6 +747,22 @@ const CourseAssignments = () => {
             primaryButtonText={selectedOffering ? 'Update Assignment' : 'Assign Teacher'}
           />
         )}
+
+        {/* Delete Confirmation Modal */}
+        <DeleteConfirmationModal
+          isOpen={!!deleteTarget}
+          title="Delete Course Assignment"
+          itemName={deleteTarget ? `${deleteTarget.courseName} assigned to ${deleteTarget.teacherName}` : ''}
+          isDeleting={isDeleting}
+          errorMessage={deleteError}
+          onConfirm={handleConfirmDelete}
+          onClose={() => {
+            if (!isDeleting) {
+              setDeleteTarget(null);
+              setDeleteError('');
+            }
+          }}
+        />
       </div>
     </Layout>
   );

@@ -3,6 +3,7 @@ import Layout from '../layout/Layout';
 import FilterBar from '../components/common/FilterBar';
 import DataTable from '../components/common/DataTable';
 import Form from '../components/common/Form';
+import DeleteConfirmationModal from '../components/common/DeleteConfirmationModal';
 import { Plus } from 'lucide-react';
 import axios from 'axios';
 
@@ -12,6 +13,9 @@ const Departments = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   const fetchDepartments = async () => {
     try {
@@ -77,27 +81,34 @@ const Departments = () => {
     }
   };
 
-  const handleDelete = async (row) => {
-    const isConfirmed = window.confirm(
-      `Are you sure you want to delete ${row.departmentName}?`
-    );
-    if (!isConfirmed) return;
+  const handleDelete = (row) => {
+    setDeleteTarget(row);
+    setDeleteError('');
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    setDeleteError('');
 
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`https://localhost:7272/api/Department/${row.dbId}`, {
+      await axios.delete(`https://localhost:7272/api/Department/${deleteTarget.dbId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       setDepartments((prev) => {
-        const updated = prev.filter((d) => d.id !== row.dbId);
+        const updated = prev.filter((d) => d.id !== deleteTarget.dbId);
         const newTotalPages = Math.max(1, Math.ceil(updated.length / 10));
         setCurrentPage((curr) => Math.min(curr, newTotalPages));
         return updated;
       });
+      setDeleteTarget(null);
     } catch (error) {
       console.log('Failed to delete department', error);
-      alert(error.response?.data?.message || 'Failed to delete department');
+      setDeleteError(error.response?.data?.message || 'Failed to delete department');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -260,6 +271,22 @@ const Departments = () => {
             dropdownFields={[]}
           />
         )}
+
+        {/* Delete Confirmation Modal */}
+        <DeleteConfirmationModal
+          isOpen={!!deleteTarget}
+          title="Delete Department"
+          itemName={deleteTarget ? deleteTarget.departmentName : ''}
+          isDeleting={isDeleting}
+          errorMessage={deleteError}
+          onConfirm={handleConfirmDelete}
+          onClose={() => {
+            if (!isDeleting) {
+              setDeleteTarget(null);
+              setDeleteError('');
+            }
+          }}
+        />
       </div>
     </Layout>
   );

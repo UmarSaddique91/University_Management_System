@@ -28,7 +28,14 @@ const Login = () => {
       localStorage.setItem("roles", JSON.stringify(response.data.roles));
       localStorage.setItem("userName", response.data.name || (response.data.roles?.includes("SuperAdmin") ? "Super Admin" : "Admin"));
 
-      navigate('/dashboard');
+      const userRoles = response.data.roles || [];
+      if (userRoles.includes("Teacher")) {
+        navigate('/teacher/courses');
+      } else if (userRoles.includes("Student")) {
+        navigate('/student/courses');
+      } else {
+        navigate('/dashboard');
+      }
       
     } catch (error) {
       console.log("Login Failed", error);

@@ -4,6 +4,7 @@ import StatCard from '../components/StatCard';
 import FilterBar from '../components/common/FilterBar';
 import DataTable from '../components/common/DataTable';
 import Form from '../components/common/Form';
+import DeleteConfirmationModal from '../components/common/DeleteConfirmationModal';
 import { Users, UserRound, Landmark, Plus } from 'lucide-react';
 import axios from 'axios';
 
@@ -16,6 +17,9 @@ const Teachers = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   const fetchTeachers = async () => {
     try {
@@ -56,28 +60,37 @@ const Teachers = () => {
     setShowModal(true);
   };
 
-  const handleDelete = async (row) => {
-    const isConfirmed = window.confirm(`Are you sure you want to delete ${row.name || 'this teacher'}?`);
-    if (!isConfirmed) return;
+  const handleDelete = (row) => {
+    setDeleteTarget(row);
+    setDeleteError('');
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    setDeleteError('');
 
     try {
       const token = localStorage.getItem("token");
 
-      await axios.delete(`https://localhost:7272/api/Teacher/${row.dbId}`, {
+      await axios.delete(`https://localhost:7272/api/Teacher/${deleteTarget.dbId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
       setTeacher((prev) => {
-        const updated = prev.filter((t) => t.id !== row.dbId);
+        const updated = prev.filter((t) => t.id !== deleteTarget.dbId);
         const newTotalPages = Math.max(1, Math.ceil(updated.length / 10));
         setCurrentPage((curr) => Math.min(curr, newTotalPages));
         return updated;
       });
+      setDeleteTarget(null);
     } catch (error) {
       console.log("Teacher Delete Failed", error);
-      alert(error.response?.data?.message || "Failed to delete teacher");
+      setDeleteError(error.response?.data?.message || "Failed to delete teacher");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -479,6 +492,22 @@ const Teachers = () => {
             dropdownFields={teacherDropdownFields}
           />
         )}
+
+        {/* Delete Confirmation Modal */}
+        <DeleteConfirmationModal
+          isOpen={!!deleteTarget}
+          title="Delete Teacher"
+          itemName={deleteTarget ? (deleteTarget.name || deleteTarget.teacherName || 'this teacher') : ''}
+          isDeleting={isDeleting}
+          errorMessage={deleteError}
+          onConfirm={handleConfirmDelete}
+          onClose={() => {
+            if (!isDeleting) {
+              setDeleteTarget(null);
+              setDeleteError('');
+            }
+          }}
+        />
       </div>
     </Layout>
   );

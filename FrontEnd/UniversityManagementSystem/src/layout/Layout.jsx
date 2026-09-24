@@ -13,9 +13,11 @@ const Layout = ({ children }) => {
 
     const hasAdminAccess = roles.includes("Admin") || roles.includes("SuperAdmin") || roles.includes("Super Admin");
     const isSuperAdmin = roles.includes("SuperAdmin") || roles.includes("Super Admin");
+    const isTeacher = roles.includes("Teacher");
+    const isStudent = roles.includes("Student");
 
     // Display Name
-    const userName = localStorage.getItem("userName") || (isSuperAdmin ? "Super Admin" : "Admin");
+    const userName = localStorage.getItem("userName") || (isSuperAdmin ? "Super Admin" : isTeacher ? "Teacher" : isStudent ? "Student" : "Admin");
 
     // States for Profile Dropdown
     const [showProfile, setShowProfile] = useState(false);
@@ -159,6 +161,88 @@ const Layout = ({ children }) => {
                         </nav>
                     )}
 
+                    {/* Teacher Portal Navigation */}
+                    {isTeacher && (
+                        <nav className="flex flex-col flex-1 space-y-1 mt-6">
+                            <NavLink
+                                to="/teacher/courses"
+                                className={({ isActive }) =>
+                                    `flex items-center text-white gap-2 py-2 px-2 rounded rounded-md w-full transition-colors ${
+                                        isActive ? 'bg-blue-500' : 'bg-transparent hover:bg-blue-600'
+                                    }`
+                                }
+                            >
+                                <BookOpen className="text-white" size={14} />
+                                <span className="text-[14px]">My Courses</span>
+                            </NavLink>
+
+                            <NavLink
+                                to="/teacher/exams"
+                                className={({ isActive }) =>
+                                    `flex items-center text-white gap-2 py-2 px-2 rounded rounded-md w-full transition-colors ${
+                                        isActive ? 'bg-blue-500' : 'bg-transparent hover:bg-blue-600'
+                                    }`
+                                }
+                            >
+                                <GraduationCap className="text-white" size={14} />
+                                <span className="text-[14px]">Exams & Marks</span>
+                            </NavLink>
+
+                            <NavLink
+                                to="/teacher/attendance"
+                                className={({ isActive }) =>
+                                    `flex items-center text-white gap-2 py-2 px-2 rounded rounded-md w-full transition-colors ${
+                                        isActive ? 'bg-blue-500' : 'bg-transparent hover:bg-blue-600'
+                                    }`
+                                }
+                            >
+                                <Users className="text-white" size={14} />
+                                <span className="text-[14px]">Attendance</span>
+                            </NavLink>
+                        </nav>
+                    )}
+
+                    {/* Student Portal Navigation */}
+                    {isStudent && (
+                        <nav className="flex flex-col flex-1 space-y-1 mt-6">
+                            <NavLink
+                                to="/student/courses"
+                                className={({ isActive }) =>
+                                    `flex items-center text-white gap-2 py-2 px-2 rounded rounded-md w-full transition-colors ${
+                                        isActive ? 'bg-blue-500' : 'bg-transparent hover:bg-blue-600'
+                                    }`
+                                }
+                            >
+                                <BookOpen className="text-white" size={14} />
+                                <span className="text-[14px]">My Courses</span>
+                            </NavLink>
+
+                            <NavLink
+                                to="/student/results"
+                                className={({ isActive }) =>
+                                    `flex items-center text-white gap-2 py-2 px-2 rounded rounded-md w-full transition-colors ${
+                                        isActive ? 'bg-blue-500' : 'bg-transparent hover:bg-blue-600'
+                                    }`
+                                }
+                            >
+                                <GraduationCap className="text-white" size={14} />
+                                <span className="text-[14px]">Results</span>
+                            </NavLink>
+
+                            <NavLink
+                                to="/student/attendance"
+                                className={({ isActive }) =>
+                                    `flex items-center text-white gap-2 py-2 px-2 rounded rounded-md w-full transition-colors ${
+                                        isActive ? 'bg-blue-500' : 'bg-transparent hover:bg-blue-600'
+                                    }`
+                                }
+                            >
+                                <Users className="text-white" size={14} />
+                                <span className="text-[14px]">Attendance</span>
+                            </NavLink>
+                        </nav>
+                    )}
+
                     
                 </div>
             </aside>
@@ -199,7 +283,7 @@ const Layout = ({ children }) => {
 
                                         <div className="flex flex-col min-w-0">
                                             <span className="font-semibold text-sm truncate">{userName}</span>
-                                            <span className="text-gray-600 text-xs font-semibold -mt-0.5">{isSuperAdmin ? "Super Administrator" : "Administrator"}</span>
+                                            <span className="text-gray-600 text-xs font-semibold -mt-0.5">{isSuperAdmin ? "Super Administrator" : isTeacher ? "Faculty Teacher" : isStudent ? "Enrolled Student" : "Administrator"}</span>
                                         </div>
                                     </div>
 

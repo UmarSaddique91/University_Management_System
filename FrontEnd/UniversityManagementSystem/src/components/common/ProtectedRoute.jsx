@@ -40,8 +40,15 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
     roles.some((role) => allowedRoles.includes(role));
 
   if (!hasAccess) {
-    // If logged in but unauthorized for this specific route (e.g. Admin visiting SuperAdmin-only page),
-    // redirect to dashboard instead of kicking to login
+    // If logged in as Teacher, redirect to Teacher portal
+    if (roles.includes("Teacher")) {
+      return <Navigate to="/teacher/courses" replace />;
+    }
+    // If logged in as Student, redirect to Student portal
+    if (roles.includes("Student")) {
+      return <Navigate to="/student/courses" replace />;
+    }
+    // If Admin/SuperAdmin visiting an unauthorized page, redirect to Admin dashboard
     return <Navigate to="/dashboard" replace />;
   }
 

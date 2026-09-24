@@ -3,6 +3,7 @@ import Layout from '../layout/Layout';
 import FilterBar from '../components/common/FilterBar';
 import DataTable from '../components/common/DataTable';
 import Form from '../components/common/Form';
+import DeleteConfirmationModal from '../components/common/DeleteConfirmationModal';
 import { Plus } from 'lucide-react';
 import axios from 'axios';
 
@@ -18,6 +19,9 @@ const Courses = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [formDepartmentId, setFormDepartmentId] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   const fetchCoursesAndMetadata = async () => {
     try {
@@ -133,29 +137,36 @@ const Courses = () => {
     }
   };
 
-  const handleDelete = async (row) => {
-    const isConfirmed = window.confirm(
-      `Are you sure you want to delete ${row.courseName} (${row.courseCode})?`
-    );
-    if (!isConfirmed) return;
+  const handleDelete = (row) => {
+    setDeleteTarget(row);
+    setDeleteError('');
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    setDeleteError('');
 
     try {
       const token = localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-      await axios.delete(`https://localhost:7272/api/Course/${row.dbId}`, {
+      await axios.delete(`https://localhost:7272/api/Course/${deleteTarget.dbId}`, {
         headers,
       });
 
       setCourses((prev) => {
-        const updated = prev.filter((c) => c.id !== row.dbId);
+        const updated = prev.filter((c) => c.id !== deleteTarget.dbId);
         const newTotalPages = Math.max(1, Math.ceil(updated.length / 10));
         setCurrentPage((curr) => Math.min(curr, newTotalPages));
         return updated;
       });
+      setDeleteTarget(null);
     } catch (error) {
       console.log('Failed to delete course', error);
-      alert(error.response?.data?.message || 'Failed to delete course');
+      setDeleteError(error.response?.data?.message || 'Failed to delete course');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -508,6 +519,22 @@ const Courses = () => {
             dropdownFields={courseDropdownFields}
           />
         )}
+
+        {/* Delete Confirmation Modal */}
+        <DeleteConfirmationModal
+          isOpen={!!deleteTarget}
+          title="Delete Course"
+          itemName={deleteTarget ? `${deleteTarget.courseName} (${deleteTarget.courseCode})` : ''}
+          isDeleting={isDeleting}
+          errorMessage={deleteError}
+          onConfirm={handleConfirmDelete}
+          onClose={() => {
+            if (!isDeleting) {
+              setDeleteTarget(null);
+              setDeleteError('');
+            }
+          }}
+        />
       </div>
     </Layout>
   );

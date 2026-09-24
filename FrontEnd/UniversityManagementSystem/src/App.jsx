@@ -12,6 +12,12 @@ import Courses from './pages/Courses'
 import CourseAssignments from './pages/CourseAssignments'
 import Admins from './pages/Admins'
 import ProtectedRoute from './components/common/ProtectedRoute'
+import TeacherCourses from './pages/Teacher/TeacherCourses'
+import TeacherExams from './pages/Teacher/TeacherExams'
+import TeacherAttendance from './pages/Teacher/TeacherAttendance'
+import StudentCourses from './pages/Student/StudentCourses'
+import StudentResults from './pages/Student/StudentResults'
+import StudentAttendance from './pages/Student/StudentAttendance'
 
 import { Routes, Route } from 'react-router-dom'
 
@@ -96,6 +102,58 @@ const App = () => {
         element={
           <ProtectedRoute allowedRoles={["SuperAdmin"]}>
             <Admins />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Teacher Portal Routes */}
+      <Route
+        path="/teacher/courses"
+        element={
+          <ProtectedRoute allowedRoles={["Teacher"]}>
+            <TeacherCourses />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/exams"
+        element={
+          <ProtectedRoute allowedRoles={["Teacher"]}>
+            <TeacherExams />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/attendance"
+        element={
+          <ProtectedRoute allowedRoles={["Teacher"]}>
+            <TeacherAttendance />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Student Portal Routes */}
+      <Route
+        path="/student/courses"
+        element={
+          <ProtectedRoute allowedRoles={["Student"]}>
+            <StudentCourses />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/results"
+        element={
+          <ProtectedRoute allowedRoles={["Student"]}>
+            <StudentResults />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/attendance"
+        element={
+          <ProtectedRoute allowedRoles={["Student"]}>
+            <StudentAttendance />
           </ProtectedRoute>
         }
       />
