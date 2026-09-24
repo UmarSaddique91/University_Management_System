@@ -344,6 +344,9 @@ namespace University_Management_System.Migrations
                     b.Property<DateTime>("AttendanceDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("AttendanceSessionId")
+                        .HasColumnType("int");
+
                     b.Property<int>("CourseOfferingId")
                         .HasColumnType("int");
 
@@ -356,11 +359,37 @@ namespace University_Management_System.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("AttendanceSessionId");
+
                     b.HasIndex("CourseOfferingId");
 
                     b.HasIndex("StudentId");
 
                     b.ToTable("Attendance");
+                });
+
+            modelBuilder.Entity("University_Management_System.Models.MainModels.AttendanceSession", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("ClassDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CourseOfferingId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourseOfferingId");
+
+                    b.ToTable("AttendanceSessions");
                 });
 
             modelBuilder.Entity("University_Management_System.Models.MainModels.Course", b =>
@@ -382,6 +411,9 @@ namespace University_Management_System.Migrations
 
                     b.Property<int?>("DepartmentId")
                         .HasColumnType("int");
+
+                    b.Property<bool>("HasPractical")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Level")
                         .HasColumnType("nvarchar(max)");
@@ -833,6 +865,10 @@ namespace University_Management_System.Migrations
 
             modelBuilder.Entity("University_Management_System.Models.MainModels.Attendance", b =>
                 {
+                    b.HasOne("University_Management_System.Models.MainModels.AttendanceSession", "AttendanceSession")
+                        .WithMany()
+                        .HasForeignKey("AttendanceSessionId");
+
                     b.HasOne("University_Management_System.Models.MainModels.CourseOffering", "CourseOffering")
                         .WithMany()
                         .HasForeignKey("CourseOfferingId")
@@ -845,9 +881,22 @@ namespace University_Management_System.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("AttendanceSession");
+
                     b.Navigation("CourseOffering");
 
                     b.Navigation("Student");
+                });
+
+            modelBuilder.Entity("University_Management_System.Models.MainModels.AttendanceSession", b =>
+                {
+                    b.HasOne("University_Management_System.Models.MainModels.CourseOffering", "CourseOffering")
+                        .WithMany()
+                        .HasForeignKey("CourseOfferingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CourseOffering");
                 });
 
             modelBuilder.Entity("University_Management_System.Models.MainModels.Course", b =>

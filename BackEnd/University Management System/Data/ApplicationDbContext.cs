@@ -33,6 +33,7 @@ namespace University_Management_System.Data
         public DbSet <Enrollment> Enrollments { get; set; }
 
         public DbSet<Attendance> Attendance { get; set; }
+        public DbSet<AttendanceSession> AttendanceSessions { get; set; }
 
         public DbSet <Exam> Exams { get; set; }
 

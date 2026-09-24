@@ -232,19 +232,37 @@ namespace University_Management_System.Controllers
                 return NotFound(new { message = "Admin profile not found" });
             }
 
-            // Registered admin hard delete protection
+            // If an associated Identity user exists, delete the user account
+            IdentityUser? user = null;
             if (!string.IsNullOrEmpty(adminProfile.UserId))
             {
-                return BadRequest(new
+                user = await _userManager.FindByIdAsync(adminProfile.UserId);
+            }
+            if (user == null && !string.IsNullOrEmpty(adminProfile.Email))
+            {
+                user = await _userManager.FindByEmailAsync(adminProfile.Email);
+            }
+
+            if (user != null)
+            {
+                var isSuper = await _userManager.IsInRoleAsync(user, SystemRoles.superAdmin);
+                if (isSuper)
                 {
-                    message = "Registered administrators cannot be deleted directly. Deactivate the account instead."
-                });
+                    return BadRequest(new { message = "Super Administrator account cannot be deleted." });
+                }
+
+                var deleteUserResult = await _userManager.DeleteAsync(user);
+                if (!deleteUserResult.Succeeded)
+                {
+                    var errors = string.Join(", ", deleteUserResult.Errors.Select(e => e.Description));
+                    return BadRequest(new { message = $"Failed to delete associated user account: {errors}" });
+                }
             }
 
             _context.AdminProfiles.Remove(adminProfile);
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Pending admin profile deleted successfully" });
+            return Ok(new { message = "Administrator deleted successfully" });
         }
     }
 }

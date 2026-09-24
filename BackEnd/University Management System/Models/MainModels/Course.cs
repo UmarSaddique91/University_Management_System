@@ -1,4 +1,4 @@
-﻿namespace University_Management_System.Models.MainModels
+namespace University_Management_System.Models.MainModels
 {
     public class Course
     {
@@ -9,6 +9,7 @@
         public int CreditHours { get; set; }
         public string? Level { get; set; }
         public string? Status { get; set; }
+        public bool HasPractical { get; set; } = false;
 
         
 

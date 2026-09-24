@@ -83,7 +83,7 @@ builder.Services.AddAuthentication(options =>
 
 
 
-//Policy for Admin Authorization
+//Policies for Authorization
 
 builder.Services.AddAuthorization(options =>
 {
@@ -92,8 +92,17 @@ builder.Services.AddAuthorization(options =>
         policy.RequireRole(
             University_Management_System.Constants.SystemRoles.superAdmin,
             University_Management_System.Constants.SystemRoles.Admin
-
         );
+    });
+
+    options.AddPolicy("TeacherAccess", policy =>
+    {
+        policy.RequireRole(University_Management_System.Constants.SystemRoles.Teacher);
+    });
+
+    options.AddPolicy("StudentAccess", policy =>
+    {
+        policy.RequireRole(University_Management_System.Constants.SystemRoles.Student);
     });
 });
 
@@ -129,6 +138,7 @@ using (var scope= app.Services.CreateScope())
     await RoleSeeder.SeedRolesAsync(roleManager);
     await SuperAdminSeeder.SuperAdminSeederAsync(userManager,app.Configuration);
     await AcademicDataSeeder.SeedAcademicDataAsync(dbContext);
+    await AcademicCurriculumSeeder.SeedCurriculumAsync(dbContext);
 
     var enrollmentSyncService = scope.ServiceProvider.GetRequiredService<EnrollmentSyncService>();
     await enrollmentSyncService.SynchronizeAllActiveSemestersAsync();

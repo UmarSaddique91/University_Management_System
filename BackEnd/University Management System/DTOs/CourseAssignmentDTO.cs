@@ -4,7 +4,7 @@ namespace University_Management_System.DTOs
     {
         public int CourseId { get; set; }
 
-        public int TeacherId { get; set; }
+        public int? TeacherId { get; set; }
 
         public int SemesterId { get; set; }
 

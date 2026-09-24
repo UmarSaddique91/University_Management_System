@@ -8,9 +8,9 @@ namespace University_Management_System.Models.MainModels
         public int CourseId { get; set; }
         public Course Course { get; set; }
 
-        // Which teacher is teaching the course
-        public int TeacherId { get; set; }
-        public Teacher Teacher { get; set; }
+        // Which teacher is teaching the course (nullable if not yet assigned)
+        public int? TeacherId { get; set; }
+        public Teacher? Teacher { get; set; }
 
         // In which semester the course is offered
         public int SemesterId { get; set; }

@@ -1,4 +1,4 @@
-﻿namespace University_Management_System.Models.MainModels
+namespace University_Management_System.Models.MainModels
 {
     public class Attendance
     {
@@ -16,7 +16,9 @@
         
         public DateTime AttendanceDate { get; set; }
 
-        
         public string Status { get; set; }
+
+        public int? AttendanceSessionId { get; set; }
+        public AttendanceSession? AttendanceSession { get; set; }
     }
 }

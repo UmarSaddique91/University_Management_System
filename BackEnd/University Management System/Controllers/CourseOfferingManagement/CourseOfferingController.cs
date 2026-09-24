@@ -36,8 +36,8 @@ namespace University_Management_System.Controllers.CourseOfferingManagement
                     CreditHours = co.Course != null ? (int?)co.Course.CreditHours : null,
 
                     co.TeacherId,
-                    TeacherName = co.Teacher != null ? co.Teacher.TeacherName : "",
-                    TeacherEmail = co.Teacher != null ? co.Teacher.Email : "",
+                    TeacherName = co.Teacher != null && !string.IsNullOrWhiteSpace(co.Teacher.TeacherName) ? co.Teacher.TeacherName : "-",
+                    TeacherEmail = co.Teacher != null && !string.IsNullOrWhiteSpace(co.Teacher.Email) ? co.Teacher.Email : "-",
 
                     DepartmentId = co.Course != null ? (int?)co.Course.DepartmentId : (co.Teacher != null ? (int?)co.Teacher.DepartmentId : null),
                     DepartmentName = co.Course != null && co.Course.Department != null
@@ -79,11 +79,6 @@ namespace University_Management_System.Controllers.CourseOfferingManagement
             if (model.CourseId <= 0)
             {
                 return BadRequest(new { message = "Course must be selected" });
-            }
-
-            if (model.TeacherId <= 0)
-            {
-                return BadRequest(new { message = "Teacher must be selected" });
             }
 
             // 1. Validate Semester
@@ -128,23 +123,26 @@ namespace University_Management_System.Controllers.CourseOfferingManagement
                 });
             }
 
-            // 4. Validate Teacher
-            var teacher = await _context.Teachers
-                .FirstOrDefaultAsync(t => t.Id == model.TeacherId);
-
-            if (teacher == null)
+            // 4. Validate Teacher (optional)
+            if (model.TeacherId.HasValue && model.TeacherId.Value > 0)
             {
-                return BadRequest(new { message = "Selected teacher does not exist" });
-            }
+                var teacher = await _context.Teachers
+                    .FirstOrDefaultAsync(t => t.Id == model.TeacherId.Value);
 
-            if (teacher.Status != null && teacher.Status.Equals("Inactive", StringComparison.OrdinalIgnoreCase))
-            {
-                return BadRequest(new { message = "Cannot assign an inactive teacher" });
-            }
+                if (teacher == null)
+                {
+                    return BadRequest(new { message = "Selected teacher does not exist" });
+                }
 
-            if (teacher.DepartmentId.HasValue && course.DepartmentId.HasValue && teacher.DepartmentId.Value != course.DepartmentId.Value)
-            {
-                return BadRequest(new { message = "Teacher does not belong to the department of the course being offered" });
+                if (teacher.Status != null && teacher.Status.Equals("Inactive", StringComparison.OrdinalIgnoreCase))
+                {
+                    return BadRequest(new { message = "Cannot assign an inactive teacher" });
+                }
+
+                if (teacher.DepartmentId.HasValue && course.DepartmentId.HasValue && teacher.DepartmentId.Value != course.DepartmentId.Value)
+                {
+                    return BadRequest(new { message = "Teacher does not belong to the department of the course being offered" });
+                }
             }
 
             // 5. Check Uniqueness: CourseId + SemesterId
@@ -162,7 +160,7 @@ namespace University_Management_System.Controllers.CourseOfferingManagement
             var offering = new CourseOffering
             {
                 CourseId = model.CourseId,
-                TeacherId = model.TeacherId,
+                TeacherId = model.TeacherId.HasValue && model.TeacherId.Value > 0 ? model.TeacherId.Value : null,
                 SemesterId = model.SemesterId,
                 Status = string.IsNullOrWhiteSpace(model.Status) ? "Active" : model.Status.Trim()
             };
@@ -238,23 +236,32 @@ namespace University_Management_System.Controllers.CourseOfferingManagement
                 });
             }
 
-            // 4. Validate Teacher
-            var teacher = await _context.Teachers
-                .FirstOrDefaultAsync(t => t.Id == model.TeacherId);
-
-            if (teacher == null)
+            // 4. Validate Teacher (optional)
+            if (model.TeacherId.HasValue && model.TeacherId.Value > 0)
             {
-                return BadRequest(new { message = "Selected teacher does not exist" });
+                var teacher = await _context.Teachers
+                    .FirstOrDefaultAsync(t => t.Id == model.TeacherId.Value);
+
+                if (teacher == null)
+                {
+                    return BadRequest(new { message = "Selected teacher does not exist" });
+                }
+
+                if (teacher.Status != null && teacher.Status.Equals("Inactive", StringComparison.OrdinalIgnoreCase))
+                {
+                    return BadRequest(new { message = "Cannot assign an inactive teacher" });
+                }
+
+                if (teacher.DepartmentId.HasValue && course.DepartmentId.HasValue && teacher.DepartmentId.Value != course.DepartmentId.Value)
+                {
+                    return BadRequest(new { message = "Teacher does not belong to the department of the course being offered" });
+                }
+
+                offering.TeacherId = model.TeacherId.Value;
             }
-
-            if (teacher.Status != null && teacher.Status.Equals("Inactive", StringComparison.OrdinalIgnoreCase))
+            else
             {
-                return BadRequest(new { message = "Cannot assign an inactive teacher" });
-            }
-
-            if (teacher.DepartmentId.HasValue && course.DepartmentId.HasValue && teacher.DepartmentId.Value != course.DepartmentId.Value)
-            {
-                return BadRequest(new { message = "Teacher does not belong to the department of the course being offered" });
+                offering.TeacherId = null;
             }
 
             // 5. Check Uniqueness: CourseId + SemesterId (excluding current record)
@@ -270,7 +277,6 @@ namespace University_Management_System.Controllers.CourseOfferingManagement
             }
 
             offering.CourseId = model.CourseId;
-            offering.TeacherId = model.TeacherId;
             offering.SemesterId = model.SemesterId;
             if (!string.IsNullOrWhiteSpace(model.Status))
             {
@@ -322,17 +328,47 @@ namespace University_Management_System.Controllers.CourseOfferingManagement
                 return NotFound(new { message = "Course offering not found" });
             }
 
-            // Safe Deletion Checks: Verify if referenced by Enrollments, Attendance, or Exams
-            var hasEnrollments = await _context.Enrollments.AnyAsync(e => e.CourseOfferingId == id);
-            var hasAttendance = await _context.Attendance.AnyAsync(a => a.CourseOfferingId == id);
-            var hasExams = await _context.Exams.AnyAsync(ex => ex.CourseOfferingId == id);
-
-            if (hasEnrollments || hasAttendance || hasExams)
+            // Remove associated attendance records and attendance sessions
+            var attendanceRecords = await _context.Attendance
+                .Where(a => a.CourseOfferingId == id)
+                .ToListAsync();
+            if (attendanceRecords.Any())
             {
-                return BadRequest(new
+                _context.Attendance.RemoveRange(attendanceRecords);
+            }
+
+            var attendanceSessions = await _context.AttendanceSessions
+                .Where(s => s.CourseOfferingId == id)
+                .ToListAsync();
+            if (attendanceSessions.Any())
+            {
+                _context.AttendanceSessions.RemoveRange(attendanceSessions);
+            }
+
+            // Remove exams and their grades
+            var exams = await _context.Exams
+                .Where(e => e.CourseOfferingId == id)
+                .ToListAsync();
+            var examIds = exams.Select(e => e.Id).ToList();
+            if (examIds.Any())
+            {
+                var grades = await _context.Grades
+                    .Where(g => examIds.Contains(g.ExamId))
+                    .ToListAsync();
+                if (grades.Any())
                 {
-                    message = "Cannot delete course assignment because it is already referenced by student enrollments, attendance records, or examinations. Deactivate the assignment instead."
-                });
+                    _context.Grades.RemoveRange(grades);
+                }
+                _context.Exams.RemoveRange(exams);
+            }
+
+            // Remove student enrollments for this offering
+            var enrollments = await _context.Enrollments
+                .Where(e => e.CourseOfferingId == id)
+                .ToListAsync();
+            if (enrollments.Any())
+            {
+                _context.Enrollments.RemoveRange(enrollments);
             }
 
             _context.CourseOfferings.Remove(offering);

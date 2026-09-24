@@ -43,6 +43,8 @@ namespace University_Management_System.Controllers.AcademicProgramController
                         : null,
                     ActiveSessionId = activeSessionId,
                     ActiveSessionName = activeSession != null ? activeSession.SessionName : null,
+
+
                     ConfiguredSemestersCount = activeSessionId.HasValue
                         ? _context.Semesters.Count(s => s.AcademicProgramId == program.Id && s.AcademicSessionId == activeSessionId.Value)
                         : _context.Semesters.Where(s => s.AcademicProgramId == program.Id).Select(s => s.SemesterNumber).Distinct().Count()
