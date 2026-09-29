@@ -1,10 +1,10 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using University_Management_System.Constants;
 using University_Management_System.Data;
 using University_Management_System.DTOs;
-using University_Management_System.Models.MainModels;
+using University_Management_System.Models;
 
 namespace University_Management_System.Controllers
 {
@@ -382,3 +382,4 @@ namespace University_Management_System.Controllers
         }
     }
 }
+

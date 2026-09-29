@@ -223,7 +223,7 @@ namespace University_Management_System.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("University_Management_System.Models.MainModels.AcademicProgram", b =>
+            modelBuilder.Entity("University_Management_System.Models.AcademicProgram", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -252,7 +252,7 @@ namespace University_Management_System.Migrations
                     b.ToTable("AcademicPrograms");
                 });
 
-            modelBuilder.Entity("University_Management_System.Models.MainModels.AcademicSession", b =>
+            modelBuilder.Entity("University_Management_System.Models.AcademicSession", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -278,7 +278,7 @@ namespace University_Management_System.Migrations
                     b.ToTable("AcademicSessions");
                 });
 
-            modelBuilder.Entity("University_Management_System.Models.MainModels.Assignment", b =>
+            modelBuilder.Entity("University_Management_System.Models.Assignment", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -332,7 +332,7 @@ namespace University_Management_System.Migrations
                     b.ToTable("Assignment");
                 });
 
-            modelBuilder.Entity("University_Management_System.Models.MainModels.Course", b =>
+            modelBuilder.Entity("University_Management_System.Models.Course", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -368,7 +368,7 @@ namespace University_Management_System.Migrations
                     b.ToTable("Courses");
                 });
 
-            modelBuilder.Entity("University_Management_System.Models.MainModels.CourseOffering", b =>
+            modelBuilder.Entity("University_Management_System.Models.CourseOffering", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -396,7 +396,7 @@ namespace University_Management_System.Migrations
                     b.ToTable("CourseOfferings");
                 });
 
-            modelBuilder.Entity("University_Management_System.Models.MainModels.Department", b =>
+            modelBuilder.Entity("University_Management_System.Models.Department", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -412,7 +412,7 @@ namespace University_Management_System.Migrations
                     b.ToTable("Departments");
                 });
 
-            modelBuilder.Entity("University_Management_System.Models.MainModels.Enrollment", b =>
+            modelBuilder.Entity("University_Management_System.Models.Enrollment", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -442,7 +442,7 @@ namespace University_Management_System.Migrations
                     b.ToTable("Enrollments");
                 });
 
-            modelBuilder.Entity("University_Management_System.Models.MainModels.Semester", b =>
+            modelBuilder.Entity("University_Management_System.Models.Semester", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -468,7 +468,7 @@ namespace University_Management_System.Migrations
                     b.ToTable("Semesters");
                 });
 
-            modelBuilder.Entity("University_Management_System.Models.MainModels.Setting", b =>
+            modelBuilder.Entity("University_Management_System.Models.Setting", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -523,7 +523,7 @@ namespace University_Management_System.Migrations
                     b.ToTable("Settings");
                 });
 
-            modelBuilder.Entity("University_Management_System.Models.MainModels.Student", b =>
+            modelBuilder.Entity("University_Management_System.Models.Student", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -563,7 +563,7 @@ namespace University_Management_System.Migrations
                     b.ToTable("Students");
                 });
 
-            modelBuilder.Entity("University_Management_System.Models.MainModels.Teacher", b =>
+            modelBuilder.Entity("University_Management_System.Models.Teacher", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -599,7 +599,7 @@ namespace University_Management_System.Migrations
                     b.ToTable("Teachers");
                 });
 
-            modelBuilder.Entity("University_Management_System.Models.MainModels.TeacherCourse", b =>
+            modelBuilder.Entity("University_Management_System.Models.TeacherCourse", b =>
                 {
                     b.Property<int>("TeacherId")
                         .HasColumnType("int");
@@ -665,34 +665,34 @@ namespace University_Management_System.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("University_Management_System.Models.MainModels.AcademicProgram", b =>
+            modelBuilder.Entity("University_Management_System.Models.AcademicProgram", b =>
                 {
-                    b.HasOne("University_Management_System.Models.MainModels.Department", "Department")
+                    b.HasOne("University_Management_System.Models.Department", "Department")
                         .WithMany()
                         .HasForeignKey("DepartmentId");
 
                     b.Navigation("Department");
                 });
 
-            modelBuilder.Entity("University_Management_System.Models.MainModels.Assignment", b =>
+            modelBuilder.Entity("University_Management_System.Models.Assignment", b =>
                 {
-                    b.HasOne("University_Management_System.Models.MainModels.Teacher", "AssignedTeacher")
+                    b.HasOne("University_Management_System.Models.Teacher", "AssignedTeacher")
                         .WithMany()
                         .HasForeignKey("AssignedTeacherId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("University_Management_System.Models.MainModels.Course", "Course")
+                    b.HasOne("University_Management_System.Models.Course", "Course")
                         .WithMany()
                         .HasForeignKey("CourseId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("University_Management_System.Models.MainModels.Course", null)
+                    b.HasOne("University_Management_System.Models.Course", null)
                         .WithMany("AssignedTeachers")
                         .HasForeignKey("CourseId1");
 
-                    b.HasOne("University_Management_System.Models.MainModels.Teacher", null)
+                    b.HasOne("University_Management_System.Models.Teacher", null)
                         .WithMany("AssignedCourses")
                         .HasForeignKey("TeacherId");
 
@@ -701,30 +701,30 @@ namespace University_Management_System.Migrations
                     b.Navigation("Course");
                 });
 
-            modelBuilder.Entity("University_Management_System.Models.MainModels.Course", b =>
+            modelBuilder.Entity("University_Management_System.Models.Course", b =>
                 {
-                    b.HasOne("University_Management_System.Models.MainModels.Department", "Department")
+                    b.HasOne("University_Management_System.Models.Department", "Department")
                         .WithMany("Courses")
                         .HasForeignKey("DepartmentId");
 
                     b.Navigation("Department");
                 });
 
-            modelBuilder.Entity("University_Management_System.Models.MainModels.CourseOffering", b =>
+            modelBuilder.Entity("University_Management_System.Models.CourseOffering", b =>
                 {
-                    b.HasOne("University_Management_System.Models.MainModels.Course", "Course")
+                    b.HasOne("University_Management_System.Models.Course", "Course")
                         .WithMany()
                         .HasForeignKey("CourseId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("University_Management_System.Models.MainModels.Semester", "Semester")
+                    b.HasOne("University_Management_System.Models.Semester", "Semester")
                         .WithMany()
                         .HasForeignKey("SemesterId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("University_Management_System.Models.MainModels.Teacher", "Teacher")
+                    b.HasOne("University_Management_System.Models.Teacher", "Teacher")
                         .WithMany()
                         .HasForeignKey("TeacherId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -737,15 +737,15 @@ namespace University_Management_System.Migrations
                     b.Navigation("Teacher");
                 });
 
-            modelBuilder.Entity("University_Management_System.Models.MainModels.Enrollment", b =>
+            modelBuilder.Entity("University_Management_System.Models.Enrollment", b =>
                 {
-                    b.HasOne("University_Management_System.Models.MainModels.CourseOffering", "CourseOffering")
+                    b.HasOne("University_Management_System.Models.CourseOffering", "CourseOffering")
                         .WithMany()
                         .HasForeignKey("CourseOfferingId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("University_Management_System.Models.MainModels.Student", "Student")
+                    b.HasOne("University_Management_System.Models.Student", "Student")
                         .WithMany()
                         .HasForeignKey("StudentId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -756,15 +756,15 @@ namespace University_Management_System.Migrations
                     b.Navigation("Student");
                 });
 
-            modelBuilder.Entity("University_Management_System.Models.MainModels.Semester", b =>
+            modelBuilder.Entity("University_Management_System.Models.Semester", b =>
                 {
-                    b.HasOne("University_Management_System.Models.MainModels.AcademicProgram", "AcademicProgram")
+                    b.HasOne("University_Management_System.Models.AcademicProgram", "AcademicProgram")
                         .WithMany()
                         .HasForeignKey("AcademicProgramId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("University_Management_System.Models.MainModels.AcademicSession", "AcademicSession")
+                    b.HasOne("University_Management_System.Models.AcademicSession", "AcademicSession")
                         .WithMany()
                         .HasForeignKey("AcademicSessionId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -775,33 +775,33 @@ namespace University_Management_System.Migrations
                     b.Navigation("AcademicSession");
                 });
 
-            modelBuilder.Entity("University_Management_System.Models.MainModels.Student", b =>
+            modelBuilder.Entity("University_Management_System.Models.Student", b =>
                 {
-                    b.HasOne("University_Management_System.Models.MainModels.Department", "Department")
+                    b.HasOne("University_Management_System.Models.Department", "Department")
                         .WithMany()
                         .HasForeignKey("DepartmentId");
 
                     b.Navigation("Department");
                 });
 
-            modelBuilder.Entity("University_Management_System.Models.MainModels.Teacher", b =>
+            modelBuilder.Entity("University_Management_System.Models.Teacher", b =>
                 {
-                    b.HasOne("University_Management_System.Models.MainModels.Department", "Department")
+                    b.HasOne("University_Management_System.Models.Department", "Department")
                         .WithMany("Teachers")
                         .HasForeignKey("DepartmentId");
 
                     b.Navigation("Department");
                 });
 
-            modelBuilder.Entity("University_Management_System.Models.MainModels.TeacherCourse", b =>
+            modelBuilder.Entity("University_Management_System.Models.TeacherCourse", b =>
                 {
-                    b.HasOne("University_Management_System.Models.MainModels.Course", "Course")
+                    b.HasOne("University_Management_System.Models.Course", "Course")
                         .WithMany()
                         .HasForeignKey("CourseId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("University_Management_System.Models.MainModels.Teacher", "Teacher")
+                    b.HasOne("University_Management_System.Models.Teacher", "Teacher")
                         .WithMany()
                         .HasForeignKey("TeacherId")
                         .OnDelete(DeleteBehavior.NoAction)
@@ -812,19 +812,19 @@ namespace University_Management_System.Migrations
                     b.Navigation("Teacher");
                 });
 
-            modelBuilder.Entity("University_Management_System.Models.MainModels.Course", b =>
+            modelBuilder.Entity("University_Management_System.Models.Course", b =>
                 {
                     b.Navigation("AssignedTeachers");
                 });
 
-            modelBuilder.Entity("University_Management_System.Models.MainModels.Department", b =>
+            modelBuilder.Entity("University_Management_System.Models.Department", b =>
                 {
                     b.Navigation("Courses");
 
                     b.Navigation("Teachers");
                 });
 
-            modelBuilder.Entity("University_Management_System.Models.MainModels.Teacher", b =>
+            modelBuilder.Entity("University_Management_System.Models.Teacher", b =>
                 {
                     b.Navigation("AssignedCourses");
                 });
@@ -832,3 +832,4 @@ namespace University_Management_System.Migrations
         }
     }
 }
+

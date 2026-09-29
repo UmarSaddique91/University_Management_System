@@ -1,0 +1,22 @@
+﻿namespace University_Management_System.Models
+{
+    public class Course
+    {
+        public int Id { get; set; }
+        public string? CourseCode { get; set; }
+        public string? CourseName { get; set; }
+        
+        public int CreditHours { get; set; }
+        public string? Level { get; set; }
+        public string? Status { get; set; }
+        public bool HasPractical { get; set; } = false;
+
+        
+
+
+        public int? DepartmentId { get; set; }
+        public Department? Department { get; set; }
+        
+    }
+}
+

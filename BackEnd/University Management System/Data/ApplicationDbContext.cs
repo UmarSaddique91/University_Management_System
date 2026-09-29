@@ -1,6 +1,6 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
-using University_Management_System.Models.MainModels;
+using University_Management_System.Models;
 using Microsoft.AspNetCore.Identity;
 namespace University_Management_System.Data
 {
@@ -19,7 +19,7 @@ namespace University_Management_System.Data
 
         public DbSet<Department> Departments { get; set; }
 
-        public DbSet<Setting> Settings { get; set; }
+        
 
         public DbSet<Student> Students { get; set; }
 
@@ -79,3 +79,4 @@ namespace University_Management_System.Data
         }
     }
 }
+

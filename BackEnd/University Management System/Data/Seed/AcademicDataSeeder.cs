@@ -1,6 +1,6 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using University_Management_System.Data;
-using University_Management_System.Models.MainModels;
+using University_Management_System.Models;
 
 namespace University_Management_System.Data.Seed
 {
@@ -323,4 +323,5 @@ namespace University_Management_System.Data.Seed
         }
     }
 }
+
 
