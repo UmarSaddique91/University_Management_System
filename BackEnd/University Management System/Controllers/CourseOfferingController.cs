@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using University_Management_System.Constants;
@@ -146,14 +146,29 @@ namespace University_Management_System.Controllers
             }
 
             // 5. Check Uniqueness: CourseId + SemesterId
-            var duplicateOffering = await _context.CourseOfferings
-                .AnyAsync(co => co.CourseId == model.CourseId && co.SemesterId == model.SemesterId);
+            var existingOffering = await _context.CourseOfferings
+                .FirstOrDefaultAsync(co => co.CourseId == model.CourseId && co.SemesterId == model.SemesterId);
 
-            if (duplicateOffering)
+            if (existingOffering != null)
             {
-                return BadRequest(new
+                // If offering already exists for this semester, update teacher assignment and status
+                existingOffering.TeacherId = model.TeacherId.HasValue && model.TeacherId.Value > 0 ? model.TeacherId.Value : null;
+                if (!string.IsNullOrWhiteSpace(model.Status))
                 {
-                    message = $"This course is already offered in Semester {semester.SemesterNumber}. Duplicate course offerings in the same semester are not allowed."
+                    existingOffering.Status = model.Status.Trim();
+                }
+
+                await _context.SaveChangesAsync();
+
+                if (existingOffering.Status == "Active")
+                {
+                    await _enrollmentSyncService.SynchronizeSemesterEnrollmentsAsync(existingOffering.SemesterId);
+                }
+
+                return Ok(new
+                {
+                    message = "Course assignment updated successfully",
+                    existingOffering.Id
                 });
             }
 

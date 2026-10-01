@@ -1,4 +1,4 @@
-﻿using System.Security.Cryptography;
+using System.Security.Cryptography;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -24,32 +24,22 @@ namespace University_Management_System.Controllers
 
 
 
-        //Post Method
-
+        // POST: api/RegistrationInvitation/student/{studentId}
         [HttpPost("student/{studentId}")]
         public async Task<IActionResult> CreateStudentInvitation(int studentId)
         {
-            // Student row find karo
             var student = await _context.Students.FindAsync(studentId);
-
             if (student == null)
             {
                 return NotFound(new { message = "Student not found" });
             }
 
-            // Active student ko dobara invitation nahi deni
             if (student.Status == "Active")
             {
-                return BadRequest(new
-                {
-                    message = "Student is already active"
-                });
+                return BadRequest(new { message = "Student is already active" });
             }
 
-            // Secure random token
-            var token = Convert.ToHexString(
-                RandomNumberGenerator.GetBytes(32)
-            );
+            var token = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
 
             var invitation = new RegistrationInvitation
             {
@@ -63,8 +53,7 @@ namespace University_Management_System.Controllers
             _context.RegistrationInvitations.Add(invitation);
             await _context.SaveChangesAsync();
 
-            var registrationLink =
-                $"http://localhost:5173/signUp?token={token}";
+            var registrationLink = $"http://localhost:5173/signUp?token={token}";
 
             return Ok(new
             {
@@ -73,45 +62,22 @@ namespace University_Management_System.Controllers
             });
         }
 
-
-
-
-
-
-
-
-
-
-        //Get Api
-
-
-
+        // GET: api/RegistrationInvitation/validate/{token}
         [HttpGet("validate/{token}")]
         public async Task<IActionResult> ValidateInvitation(string token)
         {
             var invitation = await _context.RegistrationInvitations
                 .FirstOrDefaultAsync(i => i.Token == token);
 
-
-
-            //Validate Invitation Link
-
             if (invitation == null)
             {
                 return NotFound(new { message = "Invalid registration link" });
             }
 
-
-            //Check if it is already used or not
-
             if (invitation.IsUsed)
             {
                 return BadRequest(new { message = "Registration link already used" });
             }
-
-
-
-            //Validate the expiration
 
             if (invitation.ExpiresAt < DateTime.UtcNow)
             {

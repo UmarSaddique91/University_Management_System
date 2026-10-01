@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -21,7 +21,7 @@ namespace University_Management_System.Controllers
 
         #region 1. Helper Methods
 
-        // Token se logged-in student find karna
+        // Resolve student profile from current user claims
         private async Task<Student?> GetLoggedInStudentAsync()
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -43,7 +43,7 @@ namespace University_Management_System.Controllers
         // Marks to Grade Letter calculation
         private static string CalculateGradeLetter(double? obtained, double total)
         {
-            if (obtained == null || total <= 0) return "â€”";
+            if (obtained == null || total <= 0) return "—";
             var percentage = (obtained.Value / total) * 100.0;
 
             if (percentage >= 85) return "A";
@@ -71,7 +71,7 @@ namespace University_Management_System.Controllers
                 return Unauthorized(new { message = "Student profile not found for this account." });
             }
 
-            // Student ke active enrolled courses nikalna
+            // Fetch active enrolled courses
             var enrollments = await _context.Enrollments
                 .Where(e => e.StudentId == student.Id && e.Status == "Active")
                 .Include(e => e.CourseOffering).ThenInclude(co => co.Course)
@@ -108,7 +108,6 @@ namespace University_Management_System.Controllers
                 ? Math.Round(((double)presentCount / totalRecords) * 100.0, 1)
                 : 0.0;
 
-            // Courses List format karein
             var coursesList = new List<object>();
             foreach (var e in enrollments)
             {
@@ -314,7 +313,7 @@ namespace University_Management_System.Controllers
                 return Unauthorized(new { message = "Student profile not found for this account." });
             }
 
-            // Security: Student enrolled hai ya nahi?
+            // Verify active enrollment
             var enrollment = await _context.Enrollments
                 .Include(e => e.CourseOffering).ThenInclude(co => co.Course)
                 .Include(e => e.CourseOffering).ThenInclude(co => co.Teacher)

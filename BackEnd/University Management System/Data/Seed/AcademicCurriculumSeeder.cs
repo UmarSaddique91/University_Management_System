@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using University_Management_System.Data;
 using University_Management_System.Models;
 
@@ -150,8 +150,12 @@ namespace University_Management_System.Data.Seed
                         continue;
                     }
 
+                    // Sirf pehle 2 courses per semester seed karo
+                    int addedThisSem = 0;
                     foreach (var spec in specs)
                     {
+                        if (addedThisSem >= 2) break; // 2 se zyada nahi
+
                         if (courseMap.TryGetValue(spec.Code, out var c))
                         {
                             if (!offeringMap.ContainsKey((sem.Id, c.Id)))
@@ -166,6 +170,7 @@ namespace University_Management_System.Data.Seed
                                 newOfferings.Add(off);
                                 offeringMap[(sem.Id, c.Id)] = off;
                             }
+                            addedThisSem++;
                         }
                     }
                 }

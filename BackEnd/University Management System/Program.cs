@@ -19,16 +19,14 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
 
-//For LoginSignup
-
+// ASP.NET Core Identity
 builder.Services.AddIdentity<IdentityUser, IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>().AddDefaultTokenProviders();
 
-//For EmailSmtp
 builder.Services.AddScoped<EmailService>();
 builder.Services.AddScoped<EnrollmentSyncService>();
 
-//JWT Authentication
+// JWT Authentication
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -81,10 +79,7 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-
-
-//Policies for Authorization
-
+// Authorization Policies
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("Admin Access", policy =>
@@ -106,8 +101,7 @@ builder.Services.AddAuthorization(options =>
     });
 });
 
-//Axios Permission
-
+// CORS Configuration
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
@@ -121,24 +115,17 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-using (var scope= app.Services.CreateScope())
+using (var scope = app.Services.CreateScope())
 {
-
-    //scope for roles
-    var roleManager = scope.ServiceProvider
-        .GetRequiredService<RoleManager<IdentityRole>>();
-
-    //scope for user
-
-    var userManager = scope.ServiceProvider
-        .GetRequiredService<UserManager<IdentityUser>>();
-
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
     await RoleSeeder.SeedRolesAsync(roleManager);
-    await SuperAdminSeeder.SuperAdminSeederAsync(userManager,app.Configuration);
-    await AcademicDataSeeder.SeedAcademicDataAsync(dbContext);
-    await AcademicCurriculumSeeder.SeedCurriculumAsync(dbContext);
+    await SuperAdminSeeder.SuperAdminSeederAsync(userManager, app.Configuration);
+    // Automatic course seeders disabled - courses are managed manually
+    // await AcademicDataSeeder.SeedAcademicDataAsync(dbContext);
+    // await AcademicCurriculumSeeder.SeedCurriculumAsync(dbContext);
 
     var enrollmentSyncService = scope.ServiceProvider.GetRequiredService<EnrollmentSyncService>();
     await enrollmentSyncService.SynchronizeAllActiveSemestersAsync();

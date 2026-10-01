@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -116,7 +116,6 @@ namespace University_Management_System.Controllers
         [HttpGet("{id}")]
         public IActionResult GetEnrollmentById(int id)
         {
-            // Specific enrollment ko Id se find kar rahe hain
             var enrollment = _context.Enrollments
                 .Where(e => e.Id == id)
                 .Select(e => new

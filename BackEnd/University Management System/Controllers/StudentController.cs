@@ -49,12 +49,16 @@ namespace University_Management_System.Controllers
                 return BadRequest(new { message = "Roll number is required" });
             }
 
+
             // Check duplication of RollNumber
             var existingStudent = await _context.Students.FirstOrDefaultAsync(s => s.RollNumber == model.RollNumber);
             if (existingStudent != null)
             {
                 return BadRequest(new { message = "Roll number already exists" });
             }
+
+
+
 
             // Check whether Department exists
             if (model.DepartmentId != null)
@@ -65,6 +69,8 @@ namespace University_Management_System.Controllers
                     return BadRequest(new { message = "Department not found" });
                 }
             }
+
+
 
             // Check whether AcademicProgram exists and matches Department
             AcademicProgram? program = null;
@@ -129,7 +135,7 @@ namespace University_Management_System.Controllers
                 _context.Students.Add(student);
                 await _context.SaveChangesAsync();
 
-                // Auto enroll into all active course offerings for the assigned semester via EnrollmentSyncService
+                //Enroll the Student in all course according to his smester
                 int enrollmentsCreated = 0;
                 if (student.CurrentSemesterId.HasValue)
                 {

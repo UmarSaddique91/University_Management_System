@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -66,14 +66,12 @@ namespace University_Management_System.Controllers
         [HttpGet("my-courses")]
         public async Task<IActionResult> GetMyCourses()
         {
-            // 1. Logged-in teacher find karein
             var teacher = await GetLoggedInTeacherAsync();
             if (teacher == null)
             {
                 return Unauthorized(new { message = "Teacher profile not found for this account." });
             }
 
-            // 2. Is teacher ke assigned active courses nikalna
             var offerings = await _context.CourseOfferings
                 .Where(co => co.TeacherId == teacher.Id && co.Status == "Active")
                 .Include(co => co.Course)
@@ -84,19 +82,17 @@ namespace University_Management_System.Controllers
 
             var offeringIds = offerings.Select(co => co.Id).ToList();
 
-            // 3. Card 2: Total unique students count
             var totalDistinctStudents = await _context.Enrollments
                 .Where(e => offeringIds.Contains(e.CourseOfferingId) && e.Status == "Active")
                 .Select(e => e.StudentId)
                 .Distinct()
                 .CountAsync();
 
-            // 4. Card 3: Total classes conducted (Attendance sessions)
             var totalClassesConducted = await _context.AttendanceSessions
                 .Where(s => offeringIds.Contains(s.CourseOfferingId))
                 .CountAsync();
 
-            // Fallback agar direct attendance lagi ho
+            // Fallback for direct attendance records without a session
             if (totalClassesConducted == 0 && offeringIds.Any())
             {
                 totalClassesConducted = await _context.Attendance
@@ -106,7 +102,6 @@ namespace University_Management_System.Controllers
                     .CountAsync();
             }
 
-            // 5. Har course ki details aur students ki counting list banana
             var coursesList = new List<object>();
             foreach (var co in offerings)
             {
@@ -127,7 +122,6 @@ namespace University_Management_System.Controllers
                 });
             }
 
-            // 6. Response return karna
             return Ok(new
             {
                 teacher = new
@@ -200,12 +194,11 @@ namespace University_Management_System.Controllers
 
             var hasPractical = offering.Course != null && offering.Course.HasPractical;
 
-            // Existing exams load karein
             var existingExams = await _context.Exams
                 .Where(e => e.CourseOfferingId == courseOfferingId)
                 .ToListAsync();
 
-            // 1. Mid Exam ensure karein
+            // Ensure default exam components exist (Mid, Final, Practical)
             var midExam = existingExams.FirstOrDefault(e => e.ExamType.ToLower() == "mid");
             if (midExam == null)
             {
@@ -219,7 +212,6 @@ namespace University_Management_System.Controllers
                 _context.Exams.Add(midExam);
             }
 
-            // 2. Final Exam ensure karein
             var finalExam = existingExams.FirstOrDefault(e => e.ExamType.ToLower() == "final");
             int expectedFinalMarks = hasPractical ? 50 : 70;
             if (finalExam == null)
@@ -238,7 +230,6 @@ namespace University_Management_System.Controllers
                 finalExam.TotalMarks = expectedFinalMarks;
             }
 
-            // 3. Practical Exam (agar course practical wala ho)
             Exam? practicalExam = null;
             if (hasPractical)
             {
@@ -258,7 +249,6 @@ namespace University_Management_System.Controllers
 
             await _context.SaveChangesAsync();
 
-            // Enrolled students nikalna
             var enrolledStudents = await _context.Enrollments
                 .Where(e => e.CourseOfferingId == courseOfferingId && e.Status == "Active")
                 .Include(e => e.Student)
@@ -268,7 +258,6 @@ namespace University_Management_System.Controllers
 
             var studentIds = enrolledStudents.Select(s => s.Id).ToList();
 
-            // In exams ke grades load karein
             var examIds = new List<int> { midExam.Id, finalExam.Id };
             if (practicalExam != null) examIds.Add(practicalExam.Id);
 
@@ -276,7 +265,6 @@ namespace University_Management_System.Controllers
                 .Where(g => examIds.Contains(g.ExamId) && studentIds.Contains(g.StudentId))
                 .ToListAsync();
 
-            // Har student ke marks map karein
             var studentsMarks = new List<object>();
             foreach (var student in enrolledStudents)
             {
@@ -476,7 +464,7 @@ namespace University_Management_System.Controllers
             if (offering == null) return NotFound(new { message = "Course offering not found." });
             if (offering.TeacherId != teacher.Id) return StatusCode(403, new { message = "You are not assigned to this course." });
 
-            // Attendance Sessions nikalna
+            // Fetch attendance sessions for this offering
             var sessions = await _context.AttendanceSessions
                 .Where(s => s.CourseOfferingId == courseOfferingId)
                 .OrderByDescending(s => s.ClassDate)
@@ -489,7 +477,6 @@ namespace University_Management_System.Controllers
                 .Where(a => a.AttendanceSessionId.HasValue && sessionIds.Contains(a.AttendanceSessionId.Value))
                 .ToListAsync();
 
-            // Session cards list
             var sessionList = new List<object>();
             foreach (var s in sessions)
             {
@@ -508,7 +495,6 @@ namespace University_Management_System.Controllers
                 });
             }
 
-            // Enrolled students attendance percentages
             var enrolledStudents = await _context.Enrollments
                 .Where(e => e.CourseOfferingId == courseOfferingId && e.Status == "Active")
                 .Include(e => e.Student)
@@ -569,7 +555,6 @@ namespace University_Management_System.Controllers
                 .Select(e => e.StudentId)
                 .ToListAsync();
 
-            // 1. Session create karein
             var session = new AttendanceSession
             {
                 CourseOfferingId = courseOfferingId,
@@ -579,7 +564,7 @@ namespace University_Management_System.Controllers
             _context.AttendanceSessions.Add(session);
             await _context.SaveChangesAsync();
 
-            // 2. Individual attendance records create karein
+            // Record attendance for each student
             foreach (var rec in model.Records)
             {
                 if (!enrolledStudentIds.Contains(rec.StudentId)) continue;

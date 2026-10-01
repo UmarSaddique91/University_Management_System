@@ -140,6 +140,13 @@ namespace University_Management_System.Controllers
             return Ok(result);
         }
 
+
+
+
+
+
+
+
         // PUT: api/Teacher/{id}
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateTeacher(int id, [FromBody] AddTeacherDTO teacher)
@@ -186,6 +193,12 @@ namespace University_Management_System.Controllers
             return Ok(new { message = "Teacher Updated Successfully" });
         }
 
+
+
+
+
+
+
         // PATCH: api/Teacher/{id}/status
         [HttpPatch("{id}/status")]
         public async Task<IActionResult> UpdateTeacherStatus(int id, [FromBody] UpdateTeacherStatusDTO model)
@@ -201,11 +214,17 @@ namespace University_Management_System.Controllers
                 return BadRequest(new { message = "Invalid status. Status must be 'Active' or 'Inactive'" });
             }
 
+
+
             var teacher = await _context.Teachers.FirstOrDefaultAsync(t => t.Id == id);
             if (teacher == null)
             {
                 return NotFound(new { message = "Teacher not found" });
             }
+
+
+
+
 
             if (newStatus == "Active" && (string.IsNullOrEmpty(teacher.UserId) || string.IsNullOrEmpty(teacher.Email)))
             {
