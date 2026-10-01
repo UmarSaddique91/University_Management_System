@@ -24,9 +24,12 @@ const Form = ({
   const [searchQueries, setSearchQueries] = useState({});
 
   useEffect(() => {
-    setFormData(initialValues || {});
-    setOpenDropdown(null);
-    setSearchQueries({});
+    if (initialValues) {
+      setFormData((prev) => ({
+        ...prev,
+        ...initialValues,
+      }));
+    }
   }, [initialValues]);
 
   const handleInputChange = (e) => {

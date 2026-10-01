@@ -36,6 +36,9 @@ const TeacherCourses = () => {
       setData(response.data);
     } catch (err) {
       console.error('Failed to fetch teacher courses:', err);
+
+
+
       const msg = err.response?.data?.message || 'Failed to load assigned courses. Please try again.';
       setError(msg);
     } finally {
@@ -64,6 +67,9 @@ const TeacherCourses = () => {
             {currentDate}
           </div>
         </div>
+
+
+        {/* For Error  */}
 
         {error && (
           <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">

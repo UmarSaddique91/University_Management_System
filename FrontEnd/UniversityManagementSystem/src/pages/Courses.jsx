@@ -51,15 +51,49 @@ const Courses = () => {
     setCurrentPage(1);
   }, [searchTerm, selectDepartment, selectProgram, selectStatus]);
 
+
+    const currentDate = new Date().toLocaleDateString('en-GB', {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  });
+
+  const [formState, setFormState] = useState({
+    courseCode: '',
+    courseName: '',
+    creditHours: '',
+    level: '',
+    departmentId: '',
+    academicProgramIds: [],
+  });
+
   const handleAddClick = () => {
     setSelectedCourse(null);
     setFormDepartmentId(null);
+    setFormState({
+      courseCode: '',
+      courseName: '',
+      creditHours: '',
+      level: '',
+      departmentId: '',
+      academicProgramIds: [],
+    });
     setShowModal(true);
   };
 
   const handleEdit = (row) => {
     setSelectedCourse(row);
-    setFormDepartmentId(row.departmentId ? Number(row.departmentId) : null);
+    const deptId = row.departmentId ? Number(row.departmentId) : null;
+    setFormDepartmentId(deptId);
+    setFormState({
+      courseCode: row.courseCode !== '-' ? row.courseCode : '',
+      courseName: row.courseName !== '-' ? row.courseName : '',
+      creditHours: row.creditHours ?? '',
+      level: row.level !== '-' ? row.level : '',
+      departmentId: row.departmentId ? String(row.departmentId) : '',
+      academicProgramIds: (row.academicPrograms || []).map((p) => p.id),
+    });
     setShowModal(true);
   };
 
@@ -67,13 +101,18 @@ const Courses = () => {
     setShowModal(false);
     setSelectedCourse(null);
     setFormDepartmentId(null);
+    setFormState({
+      courseCode: '',
+      courseName: '',
+      creditHours: '',
+      level: '',
+      departmentId: '',
+      academicProgramIds: [],
+    });
   };
 
-  const handleFormChange = (formData) => {
-    const newDeptId = formData.departmentId ? Number(formData.departmentId) : null;
-    if (newDeptId !== formDepartmentId) {
-      setFormDepartmentId(newDeptId);
-    }
+  const handleFormChange = (updatedData) => {
+    setFormState((prev) => ({ ...prev, ...updatedData }));
   };
 
   const handleFormSubmit = async (formData) => {
@@ -170,12 +209,10 @@ const Courses = () => {
     }
   };
 
-  const currentDate = new Date().toLocaleDateString('en-GB', {
-    weekday: 'long',
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-  });
+
+
+
+
 
   const availableProgramsForFilter =
     selectDepartment && selectDepartment !== 'All Departments'
@@ -400,11 +437,6 @@ const Courses = () => {
     },
   ];
 
-  // Filter programs based on selected department in form
-  const availablePrograms = academicPrograms.filter(
-    (prog) => !formDepartmentId || prog.departmentId === Number(formDepartmentId)
-  );
-
   const courseDropdownFields = [
     {
       name: 'departmentId',
@@ -417,44 +449,22 @@ const Courses = () => {
         label: item.departmentName,
         value: item.id,
       })),
-      onChange: (val, updatedData) => {
-        setFormDepartmentId(val ? Number(val) : null);
-      },
     },
     {
       name: 'academicProgramIds',
       label: 'Academic Programs',
-      placeholder: formDepartmentId
-        ? 'Select Academic Program(s)...'
-        : 'Select Department first...',
+      placeholder: 'Select Academic Program(s)...',
       searchPlaceholder: 'Search Academic Programs...',
       required: false,
       isMulti: true,
       colSpan: 2,
-      options: availablePrograms.map((prog) => ({
-        label: `${prog.programName} (${prog.programCode})`,
+      options: academicPrograms.map((prog) => ({
+        label: `${prog.programName} (${prog.programCode || ''})`,
         value: prog.id,
       })),
-      helperText: formDepartmentId
-        ? `Showing ${availablePrograms.length} program(s) for selected department.`
-        : 'Choose a department above to filter relevant programs.',
+      helperText: 'Select all academic programs where this course is offered.',
     },
   ];
-
-  const formInitialValues = selectedCourse
-    ? {
-        courseCode:
-          selectedCourse.courseCode !== '-' ? selectedCourse.courseCode : '',
-        courseName:
-          selectedCourse.courseName !== '-' ? selectedCourse.courseName : '',
-        creditHours: selectedCourse.creditHours ?? '',
-        level: selectedCourse.level !== '-' ? selectedCourse.level : '',
-        departmentId: selectedCourse.departmentId,
-        academicProgramIds: (selectedCourse.academicPrograms || []).map((p) => p.id),
-      }
-    : {
-        academicProgramIds: [],
-      };
 
   return (
     <Layout>
@@ -511,7 +521,7 @@ const Courses = () => {
             }
             primaryButtonText={selectedCourse ? 'Save Changes' : 'Add Course'}
             cancelButtonText="Cancel"
-            initialValues={formInitialValues}
+            initialValues={formState}
             onClose={handleCloseModal}
             onSubmit={handleFormSubmit}
             onFormChange={handleFormChange}

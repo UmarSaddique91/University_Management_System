@@ -5,9 +5,9 @@ import { UserPlus, BookOpen, GraduationCap, Landmark, ChevronRight } from 'lucid
 const QuickActions = () => {
   const navigate = useNavigate();
 
-  // Navigation handler (navigates to current page for now, as requested)
-  const handleActionClick = () => {
-    navigate(window.location.pathname);
+  // Navigation handler to navigate to the selected module
+  const handleActionClick = (path) => {
+    navigate(path);
   };
 
   return (
@@ -26,7 +26,7 @@ const QuickActions = () => {
         {/* 1. Add Student Button (Blue Theme) */}
         <button
           type="button"
-          onClick={handleActionClick}
+          onClick={() => handleActionClick('/students')}
           className="flex items-center justify-between px-4 py-3.5 rounded-xl bg-blue-50/80 hover:bg-blue-100 transition-colors cursor-pointer text-left group"
         >
           <div className="flex items-center gap-2.5">
@@ -39,7 +39,7 @@ const QuickActions = () => {
         {/* 2. Add Course Button (Green Theme) */}
         <button
           type="button"
-          onClick={handleActionClick}
+          onClick={() => handleActionClick('/courses')}
           className="flex items-center justify-between px-4 py-3.5 rounded-xl bg-green-50/80 hover:bg-green-100 transition-colors cursor-pointer text-left group"
         >
           <div className="flex items-center gap-2.5">
@@ -52,7 +52,7 @@ const QuickActions = () => {
         {/* 3. Add Teacher Button (Purple Theme) */}
         <button
           type="button"
-          onClick={handleActionClick}
+          onClick={() => handleActionClick('/teachers')}
           className="flex items-center justify-between px-4 py-3.5 rounded-xl bg-purple-50/80 hover:bg-purple-100 transition-colors cursor-pointer text-left group"
         >
           <div className="flex items-center gap-2.5">
@@ -65,7 +65,7 @@ const QuickActions = () => {
         {/* 4. Add Department Button (Amber / Orange Theme) */}
         <button
           type="button"
-          onClick={handleActionClick}
+          onClick={() => handleActionClick('/departments')}
           className="flex items-center justify-between px-4 py-3.5 rounded-xl bg-orange-50/80 hover:bg-orange-100 transition-colors cursor-pointer text-left group"
         >
           <div className="flex items-center gap-2.5">

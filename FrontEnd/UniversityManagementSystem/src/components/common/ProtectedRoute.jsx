@@ -4,12 +4,12 @@ import { Navigate } from 'react-router-dom'
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   const token = localStorage.getItem("token");
 
-  // If user is not authenticated at all, redirect to Login
+  //Check user Authentication
   if (!token) {
     return <Navigate to="/" replace />;
   }
 
-  // Safely parse roles from localStorage
+  // Roles Parsing from Local Storage
   let roles = [];
   try {
     const stored = localStorage.getItem("roles");
@@ -21,7 +21,7 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
     roles = [];
   }
 
-  // Fallback: decode JWT token payload if roles is empty in localStorage
+ 
   if (roles.length === 0) {
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
@@ -34,21 +34,25 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
     }
   }
 
-  // Check if user has at least one of the allowed roles
+  
+
+
+  //User should have at least 1 role
   const hasAccess =
     allowedRoles.length === 0 ||
     roles.some((role) => allowedRoles.includes(role));
 
   if (!hasAccess) {
-    // If logged in as Teacher, redirect to Teacher portal
+
+    
     if (roles.includes("Teacher")) {
       return <Navigate to="/teacher/courses" replace />;
     }
-    // If logged in as Student, redirect to Student portal
+    
     if (roles.includes("Student")) {
       return <Navigate to="/student/courses" replace />;
     }
-    // If Admin/SuperAdmin visiting an unauthorized page, redirect to Admin dashboard
+    
     return <Navigate to="/dashboard" replace />;
   }
 

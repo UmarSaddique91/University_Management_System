@@ -22,6 +22,7 @@ const CourseAssignments = () => {
   const [selectSession, setSelectSession] = useState('');
   const [selectDepartment, setSelectDepartment] = useState('');
   const [selectProgram, setSelectProgram] = useState('');
+  const [selectSemester, setSelectSemester] = useState('');
   const [selectTeacher, setSelectTeacher] = useState('');
   const [selectStatus, setSelectStatus] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -69,7 +70,7 @@ const CourseAssignments = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, selectSession, selectDepartment, selectProgram, selectTeacher, selectStatus]);
+  }, [searchTerm, selectSession, selectDepartment, selectProgram, selectSemester, selectTeacher, selectStatus]);
 
   // Derived filter options
   const availableProgramsForFilter = selectDepartment && selectDepartment !== 'All Departments'
@@ -134,23 +135,36 @@ const CourseAssignments = () => {
     setFormState((prev) => {
       const next = { ...prev, ...updatedData };
 
-      // If Department changed, clear Program, Course, Teacher if they don't match
-      if (updatedData.departmentId !== prev.departmentId) {
+      // Reset dependent selections when department changes
+      if (updatedData.departmentId !== undefined && updatedData.departmentId !== prev.departmentId) {
         next.academicProgramId = '';
         next.semesterId = '';
         next.courseId = '';
         next.teacherId = '';
       }
 
-      // If Program changed, clear Semester and Course
-      if (updatedData.academicProgramId !== prev.academicProgramId) {
+      // Sync department with selected program and reset semester/course
+      if (updatedData.academicProgramId !== undefined && updatedData.academicProgramId !== prev.academicProgramId) {
         next.semesterId = '';
         next.courseId = '';
+        next.teacherId = '';
+        const prog = academicPrograms.find((p) => String(p.id) === String(updatedData.academicProgramId));
+        if (prog?.departmentId) {
+          next.departmentId = String(prog.departmentId);
+        }
       }
 
-      // If Session changed, clear Semester
-      if (updatedData.academicSessionId !== prev.academicSessionId) {
+      if (updatedData.academicSessionId !== undefined && updatedData.academicSessionId !== prev.academicSessionId) {
         next.semesterId = '';
+      }
+
+      // Invalidate teacher if not from the selected course's department
+      if (updatedData.courseId !== undefined && updatedData.courseId !== prev.courseId) {
+        const newCourse = courses.find((c) => String(c.id) === String(updatedData.courseId));
+        const curTeacher = teachers.find((t) => String(t.id) === String(next.teacherId));
+        if (newCourse && curTeacher && newCourse.departmentId && curTeacher.departmentId !== newCourse.departmentId) {
+          next.teacherId = '';
+        }
       }
 
       return next;
@@ -262,6 +276,27 @@ const CourseAssignments = () => {
   ).length;
 
   const filterList = [
+
+    {
+      label: 'All Departments',
+      value: selectDepartment,
+      onChange: handleDepartmentFilterChange,
+      options: [
+        'All Departments',
+        ...departments.map((d) => d.departmentName),
+      ],
+    },
+
+
+     {
+      label: 'All Academic Programs',
+      value: selectProgram,
+      onChange: (e) => setSelectProgram(e.target.value),
+      options: [
+        'All Academic Programs',
+        ...availableProgramsForFilter.map((p) => p.programName),
+      ],
+    },
     {
       label: 'All Sessions',
       value: selectSession,
@@ -273,39 +308,18 @@ const CourseAssignments = () => {
           .map((s) => s.sessionName),
       ],
     },
+   
     {
-      label: 'All Departments',
-      value: selectDepartment,
-      onChange: handleDepartmentFilterChange,
+      label: 'All Semesters',
+      value: selectSemester,
+      onChange: (e) => setSelectSemester(e.target.value),
       options: [
-        'All Departments',
-        ...departments.map((d) => d.departmentName),
+        'All Semesters',
+        ...Array.from({ length: 8 }, (_, i) => `Semester ${i + 1}`),
       ],
     },
-    {
-      label: 'All Academic Programs',
-      value: selectProgram,
-      onChange: (e) => setSelectProgram(e.target.value),
-      options: [
-        'All Academic Programs',
-        ...availableProgramsForFilter.map((p) => p.programName),
-      ],
-    },
-    {
-      label: 'All Teachers',
-      value: selectTeacher,
-      onChange: (e) => setSelectTeacher(e.target.value),
-      options: [
-        'All Teachers',
-        ...teachers.map((t) => t.teacherName),
-      ],
-    },
-    {
-      label: 'All Status',
-      value: selectStatus,
-      onChange: (e) => setSelectStatus(e.target.value),
-      options: ['All Status', 'Active', 'Inactive'],
-    },
+    
+    
   ];
 
   const columns = [
@@ -417,6 +431,12 @@ const CourseAssignments = () => {
         selectProgram === 'All Academic Programs' ||
         item.programName === selectProgram;
 
+      const matchSemester =
+        selectSemester === '' ||
+        selectSemester === 'All Semesters' ||
+        `Semester ${item.semesterNumber}` === selectSemester ||
+        String(item.semesterNumber) === selectSemester;
+
       const matchTeacher =
         selectTeacher === '' ||
         selectTeacher === 'All Teachers' ||
@@ -427,7 +447,7 @@ const CourseAssignments = () => {
         selectStatus === 'All Status' ||
         item.status === selectStatus;
 
-      return matchSearch && matchSession && matchDept && matchProgram && matchTeacher && matchStatus;
+      return matchSearch && matchSession && matchDept && matchProgram && matchSemester && matchTeacher && matchStatus;
     })
     .map((item, index) => ({
       ...item,
@@ -438,9 +458,11 @@ const CourseAssignments = () => {
   // 1. Programs based on selected Department
   const modalPrograms = formState.departmentId
     ? academicPrograms.filter(
-        (p) => String(p.departmentId) === String(formState.departmentId)
+        (p) =>
+          String(p.departmentId) === String(formState.departmentId) ||
+          String(p.id) === String(formState.academicProgramId)
       )
-    : [];
+    : academicPrograms;
 
   // 2. Semesters based on selected Program AND selected Session (Active only)
   const modalSemesters = (formState.academicProgramId && formState.academicSessionId)
@@ -459,18 +481,24 @@ const CourseAssignments = () => {
     ? courses.filter((c) =>
         (c.academicPrograms || []).some(
           (ap) => String(ap.id) === String(formState.academicProgramId)
-        )
+        ) || String(c.id) === String(formState.courseId)
       )
-    : [];
+    : courses;
 
-  // 4. Teachers belonging to selected Department (Active only)
-  const modalTeachers = formState.departmentId
+  // Teachers must belong to the selected course's department
+  const selectedCourseObj = courses.find((c) => String(c.id) === String(formState.courseId));
+  const targetDeptId = selectedCourseObj?.departmentId
+    ? String(selectedCourseObj.departmentId)
+    : formState.departmentId;
+
+  const modalTeachers = targetDeptId
     ? teachers.filter((t) => {
         const active = t.status === 'Active';
-        const deptMatch = String(t.departmentId) === String(formState.departmentId);
-        return active && deptMatch;
+        const deptMatch = String(t.departmentId) === String(targetDeptId);
+        const isCurrentTeacher = formState.teacherId && String(t.id) === String(formState.teacherId);
+        return (active && deptMatch) || isCurrentTeacher;
       })
-    : [];
+    : teachers.filter((t) => t.status === 'Active');
 
   const dropdownFields = [
     {
@@ -549,13 +577,11 @@ const CourseAssignments = () => {
     {
       name: 'teacherId',
       label: 'Assigned Teacher (Optional)',
-      placeholder: !formState.departmentId
-        ? 'Select Department First'
-        : 'Select Teacher (Optional)',
+      placeholder: modalTeachers.length === 0 ? 'No teachers found in course department' : 'Select Teacher (Optional)',
       searchPlaceholder: 'Search Teacher...',
       required: false,
       colSpan: 1,
-      disabled: !formState.departmentId,
+      disabled: false,
       options: [
         { label: '— No Teacher Assigned —', value: '' },
         ...modalTeachers.map((t) => ({
