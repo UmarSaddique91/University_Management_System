@@ -19,7 +19,10 @@ namespace University_Management_System.Controllers
             _context = context;
         }
 
-        #region 1. Helper Methods
+
+
+
+        // Helper Methods
 
         // Resolve student profile from current user claims
         private async Task<Student?> GetLoggedInStudentAsync()
@@ -57,9 +60,10 @@ namespace University_Management_System.Controllers
             return "F";
         }
 
-        #endregion
 
-        #region 2. Module: My Courses & Dashboard
+
+
+        // Module: My Courses & Dashboard
 
         // GET: api/StudentPortal/my-courses
         [HttpGet("my-courses")]
@@ -146,9 +150,10 @@ namespace University_Management_System.Controllers
             });
         }
 
-        #endregion
 
-        #region 3. Module: Results
+
+
+        // Module: Results
 
         // GET: api/StudentPortal/results
         [HttpGet("results")]
@@ -238,9 +243,10 @@ namespace University_Management_System.Controllers
             return Ok(results);
         }
 
-        #endregion
 
-        #region 4. Module: Attendance
+
+
+        // Module: Attendance
 
         // GET: api/StudentPortal/attendance
         [HttpGet("attendance")]
@@ -388,8 +394,6 @@ namespace University_Management_System.Controllers
                 history = history
             });
         }
-
-        #endregion
     }
 }
 

@@ -20,7 +20,7 @@ namespace University_Management_System.Controllers
             _context = context;
         }
 
-        #region 1. Helper Methods (Token & Security)
+        
 
         // Extract Record from the login token
         private async Task<Teacher?> GetLoggedInTeacherAsync()
@@ -58,9 +58,9 @@ namespace University_Management_System.Controllers
             return "F";
         }
 
-        #endregion
+        
 
-        #region 2. Module: My Courses & Dashboard Summary
+        
 
         // GET: api/TeacherPortal/my-courses
         [HttpGet("my-courses")]
@@ -141,11 +141,10 @@ namespace University_Management_System.Controllers
             });
         }
 
-        #endregion
+        
 
-        #region 3. Shared: Course Students List
+        //Course Stuent List
 
-        // GET: api/TeacherPortal/course/{courseOfferingId}/students
         [HttpGet("course/{courseOfferingId}/students")]
         public async Task<IActionResult> GetCourseStudents(int courseOfferingId)
         {
@@ -172,11 +171,12 @@ namespace University_Management_System.Controllers
             return Ok(students);
         }
 
-        #endregion
 
-        #region 4. Module: Exams & Marks
 
-        // GET: api/TeacherPortal/course/{courseOfferingId}/exams
+        //Exam and Course
+
+
+
         [HttpGet("course/{courseOfferingId}/exams")]
         public async Task<IActionResult> GetCourseExams(int courseOfferingId)
         {
@@ -444,11 +444,9 @@ namespace University_Management_System.Controllers
             return Ok(new { message = "Marks saved successfully." });
         }
 
-        #endregion
 
-        #region 5. Module: Attendance
 
-        // GET: api/TeacherPortal/course/{courseOfferingId}/attendance-history
+        //Attendence Module
         [HttpGet("course/{courseOfferingId}/attendance-history")]
         public async Task<IActionResult> GetAttendanceHistory(int courseOfferingId)
         {
@@ -671,7 +669,6 @@ namespace University_Management_System.Controllers
             return Ok(new { message = "Attendance updated successfully." });
         }
 
-        #endregion
     }
 }
 

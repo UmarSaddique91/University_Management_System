@@ -123,9 +123,7 @@ using (var scope = app.Services.CreateScope())
 
     await RoleSeeder.SeedRolesAsync(roleManager);
     await SuperAdminSeeder.SuperAdminSeederAsync(userManager, app.Configuration);
-    // Automatic course seeders disabled - courses are managed manually
-    // await AcademicDataSeeder.SeedAcademicDataAsync(dbContext);
-    // await AcademicCurriculumSeeder.SeedCurriculumAsync(dbContext);
+ 
 
     var enrollmentSyncService = scope.ServiceProvider.GetRequiredService<EnrollmentSyncService>();
     await enrollmentSyncService.SynchronizeAllActiveSemestersAsync();

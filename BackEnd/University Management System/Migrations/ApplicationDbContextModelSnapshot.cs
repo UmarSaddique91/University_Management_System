@@ -448,7 +448,7 @@ namespace University_Management_System.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasDefaultValue("Active");
 
-                    b.Property<int>("TeacherId")
+                    b.Property<int?>("TeacherId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -636,61 +636,6 @@ namespace University_Management_System.Migrations
                         .IsUnique();
 
                     b.ToTable("Semesters");
-                });
-
-            modelBuilder.Entity("University_Management_System.Models.Setting", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("AssignmentModule")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("Authentication")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("ContactaEmail")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("CourseModule")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("DateFormat")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("DefaultLanguage")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("DefaultTimeZone")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("MinPasswordLength")
-                        .HasColumnType("int");
-
-                    b.Property<string>("PasswordComplexity")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("PaymentModule")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("PrimaryAddress")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("TeacherModule")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("UniversityLogo")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("UniversityName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Settings");
                 });
 
             modelBuilder.Entity("University_Management_System.Models.Student", b =>
@@ -924,9 +869,7 @@ namespace University_Management_System.Migrations
 
                     b.HasOne("University_Management_System.Models.Teacher", "Teacher")
                         .WithMany()
-                        .HasForeignKey("TeacherId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("TeacherId");
 
                     b.Navigation("Course");
 
@@ -1044,4 +987,3 @@ namespace University_Management_System.Migrations
         }
     }
 }
-
